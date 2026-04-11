@@ -1,0 +1,368 @@
+// Fix for saveServiceData function
+function saveServiceData(serviceType) {
+    // Validate date range for global services
+    if (['hotel', 'guide', 'transport', 'meal'].includes(serviceType)) {
+        const dateValidation = validateDateRange(serviceType);
+        if (!dateValidation.valid) {
+            showInlineError(serviceType, dateValidation.message);
+            return;
+        }
+    }
+    
+    // Validate room distribution for hotels
+    if (serviceType === 'hotel') {
+        const validation = validateRoomDistribution();
+        if (!validation.valid) {
+            showInlineError('hotel', validation.message);
+            return;
+        }
+    }
+    
+    // Collect form data
+    const activePanel = document.getElementById(`service-panel-${serviceType}`);
+    const formData = {};
+    
+    const fields = activePanel 
+        ? activePanel.querySelectorAll(`[data-service="${serviceType}"]`)
+        : document.querySelectorAll(`[data-service="${serviceType}"]`);
+    
+    fields.forEach(field => {
+        if (field.id) {
+            formData[field.id] = field.value;
+        }
+    });
+    
+    // Determine date range for application
+    let fromDate, toDate;
+    
+    switch(serviceType) {
+        case 'hotel':
+            fromDate = document.getElementById('hotel_check_in')?.value;
+            toDate = document.getElementById('hotel_check_out')?.value;
+            break;
+        case 'guide':
+            fromDate = document.getElementById('guide_from_date')?.value;
+            toDate = document.getElementById('guide_to_date')?.value;
+            break;
+        case 'transport':
+            fromDate = document.getElementById('transport_from_date')?.value;
+            toDate = document.getElementById('transport_to_date')?.value;
+            break;
+        case 'meal':
+            fromDate = document.getElementById('meal_from_date')?.value;
+            toDate = document.getElementById('meal_to_date')?.value;
+            break;
+        case 'arrival':
+            fromDate = document.getElementById('arrival_date')?.value;
+            toDate = document.getElementById('arrival_date')?.value;
+            break;
+        case 'departure':
+            fromDate = document.getElementById('departure_date')?.value;
+            toDate = document.getElementById('departure_date')?.value;
+            break;
+    }
+    
+    const payload = {
+        service_type: serviceType,
+        data: formData,
+        apply_to_specific_days: true,
+        from_date: fromDate,
+        to_date: toDate
+    };
+
+    // Add context information
+    if (currentServiceContext.rowId) {
+        payload.row_id = currentServiceContext.rowId;
+        payload.is_global = false;
+    } else {
+        payload.is_global = true;
+        payload.apply_to_specific_days = true;
+    }
+    
+    // Remove any previous notifications before sending request
+    document.querySelectorAll('.tw-notification').forEach(n => n.remove());
+    
+    fetch(`/inbound/api/${requestId}/save-service-data`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(response => response.json().then(data => ({ ok: response.ok, data })))
+    .then(({ ok, data }) => {
+        if (ok && data.success) {
+            clearInlineError(serviceType);
+            
+            // Update service tables with the new data
+            updateServiceTable(serviceType, data);
+            
+            // Update summary tables
+            updateSummaryTables(serviceType, data);
+            
+            // Update summary counts
+            updateSummaryCounts();
+            
+            // Update tab badges and colors
+            updateTabBadges();
+            updateTabColors();
+            
+            // Activate icons only for the specific date range
+            if (!currentServiceContext.rowId && fromDate && toDate) {
+                activateIconsForDateRange(serviceType, fromDate, toDate);
+                const startDate = new Date(fromDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+                const endDate = new Date(toDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+                showNotification(`Saved! Applied to ${startDate} - ${endDate}. Add another?`, 'success');
+                // Clear form for next entry
+                setTimeout(() => clearServiceForm(serviceType), 300);
+            } else if (currentServiceContext.rowId) {
+                // For day-specific services, activate only that day's icon
+                activateIcon(currentServiceContext.rowId, serviceType);
+                showNotification('Service saved for this day!', 'success');
+            } else {
+                showNotification('Service saved!', 'success');
+            }
+        } else {
+            const errorMsg = data.error || 'Error saving service data';
+            showInlineError(serviceType, errorMsg);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error saving service data', 'error');
+    });
+}
+
+// Fix for updateServiceTable function
+function updateServiceTable(serviceType, data) {
+    // Create table containers if they don't exist
+    ensureServiceTablesExist();
+    
+    const tableMap = {
+        'hotel': { tbodyId: 'hotels-table-body', containerId: 'hotels-table-container' },
+        'arrival': { tbodyId: 'arrival-table-body', containerId: 'arrival-table-container' },
+        'departure': { tbodyId: 'departure-table-body', containerId: 'departure-table-container' },
+        'guide': { tbodyId: 'guides-table-body', containerId: 'guides-table-container' },
+        'transport': { tbodyId: 'transports-table-body', containerId: 'transports-table-container' },
+        'meal': { tbodyId: 'meals-table-body', containerId: 'meals-table-container' }
+    };
+    
+    const tableInfo = tableMap[serviceType];
+    if (!tableInfo) return;
+    
+    const tbody = document.getElementById(tableInfo.tbodyId);
+    const container = document.getElementById(tableInfo.containerId);
+    
+    // Show the table container when data is added
+    if (container) {
+        container.style.display = 'block';
+    }
+    
+    // Handle different response formats
+    if (data.service_entries_html) {
+        if (tbody) {
+            tbody.insertAdjacentHTML('beforeend', data.service_entries_html);
+        }
+    } else if (data.service_entry) {
+        if (tbody) {
+            const rowHtml = createServiceRowHtml(serviceType, data.service_entry);
+            tbody.insertAdjacentHTML('beforeend', rowHtml);
+        }
+    } else if (data.all_entries_html) {
+        if (tbody) {
+            tbody.innerHTML = data.all_entries_html;
+        }
+    }
+    
+    // Mark summary tables as stale so they refresh when opened
+    if (typeof markSummaryTablesStale === 'function') {
+        markSummaryTablesStale();
+    }
+}
+
+// Function to ensure service tables exist in the DOM
+function ensureServiceTablesExist() {
+    const serviceTypes = ['hotel', 'arrival', 'departure', 'guide', 'transport', 'meal'];
+    
+    serviceTypes.forEach(serviceType => {
+        const containerId = `${serviceType}-table-container`;
+        const tbodyId = `${serviceType}-table-body`;
+        
+        // Check if container exists
+        let container = document.getElementById(containerId);
+        if (!container) {
+            // Create container
+            container = document.createElement('div');
+            container.id = containerId;
+            container.className = 'service-table-container';
+            container.style.display = 'none'; // Hidden by default
+            
+            // Create table
+            const table = document.createElement('table');
+            table.className = 'w-full text-sm border-collapse';
+            
+            // Create table header based on service type
+            const thead = document.createElement('thead');
+            let headerHtml = '';
+            
+            switch(serviceType) {
+                case 'hotel':
+                    headerHtml = `
+                        <tr class="bg-gray-100">
+                            <th class="border border-gray-300 px-2 py-1.5 text-left font-semibold">Hotel Name</th>
+                            <th class="border border-gray-300 px-2 py-1.5 text-center font-semibold">Dates</th>
+                            <th class="border border-gray-300 px-2 py-1.5 text-center font-semibold">Nights</th>
+                            <th class="border border-gray-300 px-2 py-1.5 text-center font-semibold">Rooms</th>
+                            <th class="border border-gray-300 px-2 py-1.5 text-center font-semibold">Status</th>
+                            <th class="border border-gray-300 px-2 py-1.5 text-center font-semibold">Actions</th>
+                        </tr>
+                    `;
+                    break;
+                case 'arrival':
+                case 'departure':
+                    headerHtml = `
+                        <tr class="bg-gray-100">
+                            <th class="border border-gray-300 px-2 py-1.5 text-center font-semibold">Date</th>
+                            <th class="border border-gray-300 px-2 py-1.5 text-center font-semibold">Time</th>
+                            <th class="border border-gray-300 px-2 py-1.5 text-left font-semibold">Point</th>
+                            <th class="border border-gray-300 px-2 py-1.5 text-left font-semibold">Flight No.</th>
+                            <th class="border border-gray-300 px-2 py-1.5 text-center font-semibold">PAX</th>
+                            <th class="border border-gray-300 px-2 py-1.5 text-left font-semibold">Driver</th>
+                            <th class="border border-gray-300 px-2 py-1.5 text-center font-semibold">Actions</th>
+                        </tr>
+                    `;
+                    break;
+                case 'guide':
+                    headerHtml = `
+                        <tr class="bg-gray-100">
+                            <th class="border border-gray-300 px-2 py-1.5 text-left font-semibold">Guide Name</th>
+                            <th class="border border-gray-300 px-2 py-1.5 text-center font-semibold">Date</th>
+                            <th class="border border-gray-300 px-2 py-1.5 text-left font-semibold">Language</th>
+                            <th class="border border-gray-300 px-2 py-1.5 text-left font-semibold">Telephone</th>
+                            <th class="border border-gray-300 px-2 py-1.5 text-center font-semibold">Actions</th>
+                        </tr>
+                    `;
+                    break;
+                case 'transport':
+                    headerHtml = `
+                        <tr class="bg-gray-100">
+                            <th class="border border-gray-300 px-2 py-1.5 text-center font-semibold">Date</th>
+                            <th class="border border-gray-300 px-2 py-1.5 text-left font-semibold">Vehicle</th>
+                            <th class="border border-gray-300 px-2 py-1.5 text-left font-semibold">Pickup</th>
+                            <th class="border border-gray-300 px-2 py-1.5 text-left font-semibold">Drop-off</th>
+                            <th class="border border-gray-300 px-2 py-1.5 text-center font-semibold">Status</th>
+                            <th class="border border-gray-300 px-2 py-1.5 text-center font-semibold">Actions</th>
+                        </tr>
+                    `;
+                    break;
+                case 'meal':
+                    headerHtml = `
+                        <tr class="bg-gray-100">
+                            <th class="border border-gray-300 px-2 py-1.5 text-center font-semibold">Date</th>
+                            <th class="border border-gray-300 px-2 py-1.5 text-left font-semibold">Meal Type</th>
+                            <th class="border border-gray-300 px-2 py-1.5 text-left font-semibold">Restaurant</th>
+                            <th class="border border-gray-300 px-2 py-1.5 text-left font-semibold">Location</th>
+                            <th class="border border-gray-300 px-2 py-1.5 text-center font-semibold">PAX</th>
+                            <th class="border border-gray-300 px-2 py-1.5 text-center font-semibold">Actions</th>
+                        </tr>
+                    `;
+                    break;
+            }
+            
+            thead.innerHTML = headerHtml;
+            table.appendChild(thead);
+            
+            // Create tbody
+            const tbody = document.createElement('tbody');
+            tbody.id = tbodyId;
+            table.appendChild(tbody);
+            
+            // Add table to container
+            container.appendChild(table);
+            
+            // Add container to the appropriate service panel
+            const panel = document.getElementById(`service-panel-${serviceType}`);
+            if (panel) {
+                // Find the form in the panel and insert the table after it
+                const form = panel.querySelector('form, .p-3.bg-slate-50');
+                if (form) {
+                    form.parentNode.insertBefore(container, form.nextSibling);
+                } else {
+                    panel.appendChild(container);
+                }
+            }
+        }
+    });
+}
+
+// Fix for updateSummaryTables function
+function updateSummaryTables(serviceType, data) {
+    // Map service types to their summary table body IDs
+    const tableMap = {
+        'hotel': 'full-summary-hotels',
+        'arrival': 'full-summary-flights',
+        'departure': 'full-summary-flights',
+        'guide': 'full-summary-guides',
+        'transport': 'full-summary-transports',
+        'meal': 'full-summary-meals'
+    };
+    
+    const tableId = tableMap[serviceType];
+    
+    if (tableId) {
+        if (serviceType === 'arrival' || serviceType === 'departure') {
+            // For flights, use async fetch then update badges after
+            updateFlightsSummaryTable().then(() => {
+                updateTabBadges();
+                updateTabColors();
+                // Update visible summary section
+                updateVisibleSummary(serviceType, data);
+            });
+        } else if (data.summary_entries_html || data.service_entries_html) {
+            // For other services, use summary_entries_html (consolidated) if available, else service_entries_html
+            const tableBody = document.getElementById(tableId);
+            if (tableBody) {
+                // Check if table is empty and remove placeholder if needed
+                const placeholder = tableBody.querySelector('tr td[colspan]');
+                if (placeholder && data.service_entry) {
+                    tableBody.innerHTML = '';
+                }
+                
+                tableBody.innerHTML = data.summary_entries_html || data.service_entries_html;
+                // Update badges and colors after replacing content
+                updateTabBadges();
+                updateTabColors();
+                // Update visible summary section
+                updateVisibleSummary(serviceType, data);
+            }
+        } else if (data.service_entry) {
+            // If service_entries_html is not available but service_entry is, create the row manually
+            const tableBody = document.getElementById(tableId);
+            if (tableBody) {
+                // Remove "no data" placeholder if exists
+                const placeholder = tableBody.querySelector('tr td[colspan]');
+                if (placeholder) {
+                    placeholder.closest('tr').remove();
+                }
+                const rowHtml = createSummaryRowHtml(serviceType, data.service_entry);
+                tableBody.insertAdjacentHTML('beforeend', rowHtml);
+                // Update badges and colors after adding content
+                updateTabBadges();
+                updateTabColors();
+                // Update visible summary section
+                updateVisibleSummary(serviceType, data);
+            }
+        }
+    }
+}
+
+// Add this initialization function to create service tables on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Existing initialization code...
+    
+    // Ensure service tables exist
+    ensureServiceTablesExist();
+    
+    // Rest of existing initialization...
+});

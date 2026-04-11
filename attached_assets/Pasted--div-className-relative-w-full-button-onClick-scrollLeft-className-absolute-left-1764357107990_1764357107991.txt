@@ -1,0 +1,62 @@
+<div className="relative w-full">
+  <button
+    onClick={scrollLeft}
+    className="absolute left-0 top-1/2 -translate-y-1/2 bg-black text-white w-6 h-6 rounded-full flex items-center justify-center z-10"
+  >
+    &#8592;
+  </button>
+
+  <div
+    ref={scrollRef}
+    className="flex overflow-x-auto border border-gray-200 rounded-sm scroll-smooth"
+    style={{ scrollBehavior: "smooth" }}
+  >
+    <div className="cursor-pointer flex-shrink-0 w-48 h-20 bg-white hover:bg-gray-50 flex items-center justify-center border-r border-gray-200 transition-all duration-200">
+      <span className="text-xl font-bold italic text-gray-900 dark:text-gray-100 text-center truncate">
+        Geox
+      </span>
+    </div>
+    <div className="cursor-pointer flex-shrink-0 w-48 h-20 bg-white hover:bg-gray-50 flex items-center justify-center border-r border-gray-200 transition-all duration-200">
+      <span className="text-xl font-bold italic text-gray-900 dark:text-gray-100 text-center truncate">
+        NewBalance
+      </span>
+    </div>
+    <div className="cursor-pointer flex-shrink-0 w-48 h-20 bg-white hover:bg-gray-50 flex items-center justify-center border-r border-gray-200 transition-all duration-200">
+      <span className="text-xl font-bold italic text-gray-900 dark:text-gray-100 text-center truncate">
+        Nike
+      </span>
+    </div>
+    <div className="cursor-pointer flex-shrink-0 w-48 h-20 bg-white hover:bg-gray-50 flex items-center justify-center border-r border-gray-200 transition-all duration-200">
+      <span className="text-xl font-bold italic text-gray-900 dark:text-gray-100 text-center truncate">
+        Puma
+      </span>
+    </div>
+    <div className="cursor-pointer flex-shrink-0 w-48 h-20 bg-white hover:bg-gray-50 flex items-center justify-center border-r border-gray-200 transition-all duration-200">
+      <span className="text-xl font-bold italic text-gray-900 dark:text-gray-100 text-center truncate">
+        Reebok
+      </span>
+    </div>
+    <div className="cursor-pointer flex-shrink-0 w-48 h-20 bg-white hover:bg-gray-50 flex items-center justify-center border-r border-gray-200 transition-all duration-200">
+      <span className="text-xl font-bold italic text-gray-900 dark:text-gray-100 text-center truncate">
+        Skechers
+      </span>
+    </div>
+    <div className="cursor-pointer flex-shrink-0 w-48 h-20 bg-white hover:bg-gray-50 flex items-center justify-center border-r border-gray-200 transition-all duration-200">
+      <span className="text-xl font-bold italic text-gray-900 dark:text-gray-100 text-center truncate">
+        Timberland
+      </span>
+    </div>
+    <div className="cursor-pointer flex-shrink-0 w-48 h-20 bg-white hover:bg-gray-50 flex items-center justify-center transition-all duration-200">
+      <span className="text-xl font-bold italic text-gray-900 dark:text-gray-100 text-center truncate">
+        Adidas
+      </span>
+    </div>
+  </div>
+
+  <button
+    onClick={scrollRight}
+    className="absolute right-0 top-1/2 -translate-y-1/2 bg-black text-white w-6 h-6 rounded-full flex items-center justify-center z-10"
+  >
+    &#8594;
+  </button>
+</div>

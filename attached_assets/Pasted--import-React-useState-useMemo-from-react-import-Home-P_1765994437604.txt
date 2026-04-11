@@ -1,0 +1,446 @@
+
+import React, { useState, useMemo } from 'react';
+import { 
+  Home, 
+  Package, 
+  FileText, 
+  Users, 
+  LayoutDashboard, 
+  Truck, 
+  Search, 
+  Filter, 
+  CheckCircle, 
+  Eye, 
+  Sparkles,
+  X,
+  RefreshCcw,
+  MessageSquare
+} from 'lucide-react';
+import { Order, OrderStatus } from './types';
+import { mockOrders } from './mockData';
+import { getOrderReview, getGeneralAIHelp } from './services/gemini';
+
+const App: React.FC = () => {
+  const [orders, setOrders] = useState<Order[]>(mockOrders);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeBrand, setActiveBrand] = useState<string | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [chatInput, setChatInput] = useState('');
+  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'ai', text: string }[]>([]);
+
+  // Statistics
+  const stats = useMemo(() => ({
+    pending: orders.filter(o => o.status === OrderStatus.PENDING).length,
+    returned: orders.filter(o => o.status === OrderStatus.RETURNED).length,
+    completed: orders.filter(o => o.status === OrderStatus.COMPLETED).length,
+  }), [orders]);
+
+  // Filtering
+  const filteredOrders = useMemo(() => {
+    return orders.filter(o => {
+      const matchesSearch = o.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            o.customerName.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesBrand = activeBrand ? o.brand === activeBrand : true;
+      return matchesSearch && matchesBrand;
+    });
+  }, [orders, searchTerm, activeBrand]);
+
+  const handleApprove = (id: string) => {
+    setOrders(prev => prev.map(o => o.id === id ? { ...o, status: OrderStatus.COMPLETED } : o));
+    if (selectedOrder?.id === id) setSelectedOrder(null);
+  };
+
+  const handleReturn = (id: string) => {
+    setOrders(prev => prev.map(o => o.id === id ? { ...o, status: OrderStatus.RETURNED } : o));
+    if (selectedOrder?.id === id) setSelectedOrder(null);
+  };
+
+  const handleAskAI = async (order: Order) => {
+    setSelectedOrder(order);
+    setIsAiLoading(true);
+    setAiAnalysis(null);
+    const analysis = await getOrderReview(order);
+    setAiAnalysis(analysis);
+    setIsAiLoading(false);
+  };
+
+  const handleGeneralChat = async () => {
+    if (!chatInput.trim()) return;
+    const msg = chatInput;
+    setChatMessages(prev => [...prev, { role: 'user', text: msg }]);
+    setChatInput('');
+    const response = await getGeneralAIHelp(msg, orders);
+    setChatMessages(prev => [...prev, { role: 'ai', text: response }]);
+  };
+
+  const brands = ['Adidas', 'Reebok', 'Nike', 'Others'];
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      {/* Navigation */}
+      <nav className="bg-[#2a4365] text-white px-6 py-3 flex items-center justify-between sticky top-0 z-50 shadow-md">
+        <div className="flex items-center gap-8">
+          <div className="flex items-center gap-2 font-bold text-xl tracking-tight">
+            <div className="bg-orange-500 p-1 rounded">
+              <RefreshCcw size={20} className="text-white" />
+            </div>
+            <span>OrderFlow Pro</span>
+          </div>
+          <div className="hidden md:flex items-center gap-6 text-sm font-medium opacity-90">
+            <button className="flex items-center gap-1.5 hover:opacity-100 transition-opacity"><Home size={16} /> Products</button>
+            <button className="flex items-center gap-1.5 hover:opacity-100 transition-opacity"><FileText size={16} /> Orders</button>
+            <button className="flex items-center gap-1.5 border-b-2 border-orange-400 pb-1 text-orange-400 font-semibold"><Users size={16} /> Account Manager</button>
+            <button className="flex items-center gap-1.5 hover:opacity-100 transition-opacity"><LayoutDashboard size={16} /> Management Dashboard</button>
+            <button className="flex items-center gap-1.5 hover:opacity-100 transition-opacity"><Truck size={16} /> Wholesale</button>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="text-xs bg-slate-700/50 px-3 py-1 rounded-full border border-slate-600">Demo Mode</div>
+          <div className="w-8 h-8 rounded-full bg-slate-400 overflow-hidden border-2 border-slate-600">
+             <img src="https://picsum.photos/id/64/100/100" alt="profile" />
+          </div>
+        </div>
+      </nav>
+
+      <main className="flex-1 max-w-7xl mx-auto w-full p-4 md:p-8">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-800">Account Manager Dashboard</h1>
+            <p className="text-slate-500 mt-1">Manage pending orders and customer approvals</p>
+          </div>
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 flex items-center gap-4">
+            <img src="https://picsum.photos/id/65/100/100" className="w-12 h-12 rounded-lg object-cover" alt="User" />
+            <div>
+              <div className="font-semibold text-slate-800">Ali Tameem</div>
+              <div className="text-xs text-slate-400">Account Manager</div>
+            </div>
+            <div className="h-10 w-px bg-slate-100 mx-2"></div>
+            <div className="flex flex-col gap-1 pr-4">
+              <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase">
+                <span className="w-2 h-2 rounded-full bg-yellow-400"></span> Pending: {stats.pending}
+              </div>
+              <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase">
+                <span className="w-2 h-2 rounded-full bg-blue-500"></span> Returned: {stats.returned}
+              </div>
+              <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase">
+                <span className="w-2 h-2 rounded-full bg-green-500"></span> Completed: {stats.completed}
+              </div>
+            </div>
+            <button 
+              onClick={() => setShowChat(true)}
+              className="bg-white border-2 border-blue-500 text-blue-500 px-4 py-2 rounded-lg flex items-center gap-2 font-bold text-sm hover:bg-blue-50 transition-colors shadow-sm"
+            >
+              <Sparkles size={16} /> AI Assistant
+            </button>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white border-2 border-yellow-400 rounded-2xl p-6 shadow-sm flex items-center justify-between">
+            <div>
+              <div className="text-xl font-bold text-slate-800">Pending Review</div>
+              <div className="text-sm text-slate-500">Orders pending approval</div>
+            </div>
+            <div className="text-4xl font-bold text-slate-800 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">{stats.pending}</div>
+          </div>
+          <div className="bg-white border-2 border-blue-100 rounded-2xl p-6 shadow-sm flex items-center justify-between">
+            <div>
+              <div className="text-xl font-bold text-blue-800">Returned for Correction</div>
+              <div className="text-sm text-slate-500">Orders needing revision</div>
+            </div>
+            <div className="text-4xl font-bold text-white bg-blue-500 px-4 py-2 rounded-xl shadow-inner">{stats.returned}</div>
+          </div>
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-center justify-between">
+            <div>
+              <div className="text-xl font-bold text-green-600">Completed</div>
+              <div className="text-sm text-slate-500">Approved orders</div>
+            </div>
+            <div className="text-4xl font-bold text-white bg-green-500 px-4 py-2 rounded-xl shadow-inner">{stats.completed}</div>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-8 flex flex-col md:flex-row items-center gap-4">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input 
+              type="text" 
+              placeholder="Search orders by ID, customer..." 
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <button className="flex items-center gap-2 px-5 py-2.5 border border-blue-500 text-blue-500 rounded-xl font-semibold hover:bg-blue-50 transition-colors">
+            <Filter size={18} /> Status Flow
+          </button>
+          <div className="h-8 w-px bg-slate-200 hidden md:block"></div>
+          <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
+            <span className="text-sm font-bold text-slate-400 mr-2 uppercase tracking-wider">Brands:</span>
+            {brands.map(brand => (
+              <button 
+                key={brand}
+                onClick={() => setActiveBrand(activeBrand === brand ? null : brand)}
+                className={`px-6 py-2 rounded-xl border-2 transition-all whitespace-nowrap font-medium ${
+                  activeBrand === brand 
+                  ? 'bg-orange-50 border-orange-500 text-orange-600 shadow-sm' 
+                  : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                }`}
+              >
+                {brand}
+              </button>
+            ))}
+          </div>
+          <button 
+            onClick={() => {setSearchTerm(''); setActiveBrand(null);}}
+            className="flex items-center gap-2 px-4 py-2 text-slate-400 hover:text-slate-600 transition-colors text-sm font-bold"
+          >
+            <X size={16} /> Clear Filters
+          </button>
+        </div>
+
+        {/* Orders Table */}
+        <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+          <div className="px-8 py-5 border-b border-slate-100 flex items-center gap-3">
+            <LayoutDashboard className="text-slate-400" size={24} />
+            <h2 className="text-xl font-bold text-slate-800">Recent Orders</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-slate-50 text-slate-500 text-xs font-bold uppercase tracking-wider">
+                  <th className="px-8 py-4">Order ID</th>
+                  <th className="px-6 py-4">Customer</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4">Date</th>
+                  <th className="px-6 py-4">Total</th>
+                  <th className="px-6 py-4 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredOrders.map(order => (
+                  <tr key={order.id} className="hover:bg-slate-50/80 transition-colors group">
+                    <td className="px-8 py-5 font-bold text-blue-600 hover:underline cursor-pointer">{order.id}</td>
+                    <td className="px-6 py-5 text-slate-700 font-medium">{order.customerName}</td>
+                    <td className="px-6 py-5">
+                      <span className={`px-4 py-1.5 rounded-full text-xs font-bold shadow-sm ${
+                        order.status === OrderStatus.PENDING ? 'bg-orange-100 text-orange-700' :
+                        order.status === OrderStatus.RETURNED ? 'bg-blue-100 text-blue-700' :
+                        order.status === OrderStatus.COMPLETED ? 'bg-green-100 text-green-700' :
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        {order.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5 text-slate-500 text-sm">{order.date}</td>
+                    <td className="px-6 py-5 text-slate-800 font-bold">${order.total.toFixed(2)}</td>
+                    <td className="px-6 py-5">
+                      <div className="flex items-center justify-center gap-2">
+                        {order.status === OrderStatus.PENDING && (
+                          <button 
+                            onClick={() => handleApprove(order.id)}
+                            className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-bold hover:bg-blue-700 transition-colors shadow-md"
+                          >
+                            <CheckCircle size={16} /> Approve
+                          </button>
+                        )}
+                        <button 
+                          onClick={() => setSelectedOrder(order)}
+                          className="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-bold hover:bg-slate-50 transition-colors shadow-sm"
+                        >
+                          <Eye size={16} /> Review
+                        </button>
+                        <button 
+                          onClick={() => handleAskAI(order)}
+                          className="bg-blue-50 text-blue-600 border border-blue-200 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-bold hover:bg-blue-100 transition-all shadow-sm group-hover:scale-105"
+                        >
+                          <Sparkles size={16} className="text-blue-500" /> Ask AI
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {filteredOrders.length === 0 && (
+              <div className="p-12 text-center flex flex-col items-center gap-3">
+                <Search size={48} className="text-slate-200" />
+                <div className="text-slate-400 font-medium">No orders found matching your criteria.</div>
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
+
+      {/* Order Details / AI Review Modal */}
+      {selectedOrder && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="bg-slate-900 text-white p-6 flex items-center justify-between">
+              <div>
+                <h3 className="text-2xl font-bold flex items-center gap-2">
+                   Review Order {selectedOrder.id}
+                   <span className="text-sm font-normal opacity-60 ml-2">{selectedOrder.brand}</span>
+                </h3>
+                <p className="text-slate-400 text-sm">{selectedOrder.customerName} • {selectedOrder.customerEmail}</p>
+              </div>
+              <button onClick={() => {setSelectedOrder(null); setAiAnalysis(null);}} className="hover:bg-slate-800 p-2 rounded-full transition-colors">
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-8">
+              {/* Order Summary */}
+              <div className="mb-8">
+                <h4 className="font-bold text-slate-800 uppercase tracking-widest text-xs mb-4">Order Items</h4>
+                <div className="space-y-4">
+                  {selectedOrder.items.map(item => (
+                    <div key={item.id} className="flex items-center justify-between bg-slate-50 p-4 rounded-xl border border-slate-100">
+                      <div>
+                        <div className="font-bold text-slate-800">{item.name}</div>
+                        <div className="text-xs text-slate-400">SKU: {item.sku} • Qty: {item.quantity}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-slate-800">${item.total.toFixed(2)}</div>
+                        <div className="text-xs text-slate-400">${item.price.toFixed(2)} each</div>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="flex justify-between items-center p-4 border-t-2 border-slate-100 pt-6">
+                     <span className="text-slate-500 font-bold uppercase tracking-widest text-xs">Total Amount</span>
+                     <span className="text-2xl font-black text-slate-900">${selectedOrder.total.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* AI Analysis Section */}
+              <div className="bg-blue-50 border-2 border-blue-100 rounded-2xl p-6 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-3 text-blue-200 group-hover:text-blue-300 transition-colors">
+                  <Sparkles size={40} />
+                </div>
+                <h4 className="flex items-center gap-2 font-bold text-blue-800 mb-3 text-lg">
+                  <Sparkles size={20} /> AI Agent Insights
+                </h4>
+                {isAiLoading ? (
+                  <div className="flex flex-col items-center justify-center py-6 gap-3">
+                    <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent"></div>
+                    <p className="text-blue-600 font-medium text-sm">Analyzing order patterns...</p>
+                  </div>
+                ) : aiAnalysis ? (
+                  <div className="text-blue-900 leading-relaxed text-sm whitespace-pre-wrap animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    {aiAnalysis}
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => handleAskAI(selectedOrder)}
+                    className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-lg"
+                  >
+                    Generate AI Insight
+                  </button>
+                )}
+              </div>
+
+              {/* History */}
+              <div className="mt-8">
+                <h4 className="font-bold text-slate-800 uppercase tracking-widest text-xs mb-4">Activity Log</h4>
+                <div className="space-y-3">
+                  {selectedOrder.history.map((h, i) => (
+                    <div key={i} className="flex items-start gap-3 text-sm">
+                      <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mt-2"></div>
+                      <p className="text-slate-600">{h}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 bg-slate-50 border-t border-slate-200 flex gap-4">
+              {selectedOrder.status === OrderStatus.PENDING && (
+                <>
+                  <button 
+                    onClick={() => handleApprove(selectedOrder.id)}
+                    className="flex-1 bg-green-600 text-white py-4 rounded-2xl font-bold hover:bg-green-700 transition-all shadow-lg hover:-translate-y-1"
+                  >
+                    Approve Order
+                  </button>
+                  <button 
+                    onClick={() => handleReturn(selectedOrder.id)}
+                    className="flex-1 bg-white border-2 border-blue-500 text-blue-600 py-4 rounded-2xl font-bold hover:bg-blue-50 transition-all shadow-md hover:-translate-y-1"
+                  >
+                    Return for Correction
+                  </button>
+                </>
+              )}
+              {selectedOrder.status !== OrderStatus.PENDING && (
+                <button 
+                  onClick={() => setSelectedOrder(null)}
+                  className="w-full bg-slate-800 text-white py-4 rounded-2xl font-bold hover:bg-slate-900 transition-all shadow-lg"
+                >
+                  Close
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* General AI Assistant Side Panel */}
+      {showChat && (
+        <div className="fixed inset-y-0 right-0 w-full md:w-[400px] bg-white shadow-2xl z-[150] flex flex-col animate-in slide-in-from-right duration-300 border-l border-slate-200">
+          <div className="bg-[#2a4365] text-white p-6 flex items-center justify-between">
+            <div className="flex items-center gap-2 font-bold text-lg">
+              <Sparkles className="text-orange-400" />
+              OrderFlow Assistant
+            </div>
+            <button onClick={() => setShowChat(false)} className="hover:bg-slate-700 p-2 rounded-full transition-colors">
+              <X size={20} />
+            </button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="bg-slate-50 p-4 rounded-2xl text-slate-600 text-sm border border-slate-100">
+              Hi Ali! I'm your order assistant. I can help you summarize pending orders, identify trends, or help you draft responses for returned orders.
+            </div>
+            {chatMessages.map((msg, idx) => (
+              <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[85%] p-3 rounded-2xl text-sm ${
+                  msg.role === 'user' 
+                  ? 'bg-blue-600 text-white rounded-tr-none shadow-md' 
+                  : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none shadow-sm'
+                }`}>
+                  {msg.text}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="p-4 border-t border-slate-100 bg-slate-50">
+            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-4 py-2 focus-within:ring-2 focus-within:ring-blue-500 transition-all">
+              <input 
+                type="text" 
+                placeholder="Ask me anything about orders..."
+                className="flex-1 outline-none text-sm py-2"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleGeneralChat()}
+              />
+              <button 
+                onClick={handleGeneralChat}
+                className="text-blue-600 hover:text-blue-800 transition-colors p-1"
+              >
+                <MessageSquare size={20} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default App;

@@ -1,0 +1,479 @@
+re Order Collection Feature - Complete Specification
+Overview
+Pre Order Collections allow users to create virtual stock catalogs for on-demand ordering from vendors. Products in these collections have unlimited virtual availability and appear as tabs in the product catalog.
+
+Key Characteristics
+Virtual Stock: Products have no physical inventory tracking
+Unlimited Availability: Always available for ordering
+Collection Tabs: Appear in product catalog as filterable tabs
+Default Values: Bulk apply brand/category/gender to uploaded products
+Row-Level Processing: Each row can have different brand/category/gender values
+Database Schema (No Changes Required)
+The existing schema already supports this feature:
+
+products.collections - JSONB array for collection membership
+collections table - Stores collection metadata
+brands table - Brand is a foreign key reference
+products.category - Text field (not a foreign key)
+Backend Implementation
+File: server/routes.ts
+Add this new endpoint after the existing stock upload endpoints:
+
+// Pre-Order Collection Upload - Preview file
+app.post("/api/preorder/upload/preview", upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+    const fileBuffer = req.file.buffer;
+    const fileName = req.file.originalname;
+    const fileExt = path.extname(fileName).toLowerCase();
+    let rows: any[] = [];
+    if (fileExt === '.csv') {
+      const csvText = fileBuffer.toString('utf-8');
+      const records = parse(csvText, {
+        columns: true,
+        skip_empty_lines: true,
+        trim: true
+      });
+      rows = records;
+    } else if (fileExt === '.xlsx' || fileExt === '.xls') {
+      const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      rows = XLSX.utils.sheet_to_json(firstSheet);
+    } else {
+      return res.status(400).json({ message: "Unsupported file type. Please upload CSV or Excel file." });
+    }
+    if (rows.length === 0) {
+      return res.status(400).json({ message: "File is empty or invalid" });
+    }
+    const columns = Object.keys(rows[0]);
+    const previewRows = rows.slice(0, 10);
+    
+    // Save temp data
+    const tempDataId = `preorder_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    const uploadDir = path.join(import.meta.dirname, '../uploads/temp');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    const tempDataPath = path.join(uploadDir, `${tempDataId}.json`);
+    fs.writeFileSync(tempDataPath, JSON.stringify(rows));
+    res.json({
+      totalRows: rows.length,
+      previewRows,
+      columns,
+      fileName,
+      tempDataId
+    });
+  } catch (error) {
+    console.error("Error previewing file:", error);
+    res.status(500).json({ message: "Failed to preview file" });
+  }
+});
+// Pre-Order Collection Upload - Process and create collection
+app.post("/api/preorder/process", async (req, res) => {
+  try {
+    const { tempDataId, mapping, processedRows, collectionName, collectionImage, defaultBrand, defaultCategory, defaultGender } = req.body;
+    if (!tempDataId || !mapping || !collectionName) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+    if (!mapping.sku) {
+      return res.status(400).json({ message: "UPC mapping is required" });
+    }
+    // Use processedRows if provided (contains Apply to Empty Fields changes), otherwise read from temp file
+    let rows = processedRows;
+    if (!rows) {
+      const tempDataPath = path.join(import.meta.dirname, '../uploads/temp', `${tempDataId}.json`);
+      if (!fs.existsSync(tempDataPath)) {
+        return res.status(400).json({ message: "Upload session expired. Please upload again." });
+      }
+      rows = JSON.parse(fs.readFileSync(tempDataPath, 'utf-8'));
+    }
+    // Get all brands for lookup
+    const brands = await storage.getBrands();
+    const productIds: string[] = [];
+    let productsCreated = 0;
+    // Process each row
+    for (const row of rows) {
+      const sku = row[mapping.sku];
+      if (!sku) continue;
+      // Check if product exists
+      const existingProducts = await storage.getProducts({ search: sku });
+      let product = existingProducts.find((p: any) => p.sku === sku);
+      if (!product) {
+        // Get brand/category/gender for this row - check processed fields (_brand, _category, _gender) first, then mapped columns, then defaults
+        const rowBrand = row._brand || (mapping.brand && row[mapping.brand]) || defaultBrand;
+        const rowCategory = row._category || (mapping.category && row[mapping.category]) || defaultCategory;
+        const rowGender = row._gender || (mapping.gender && row[mapping.gender]) || defaultGender;
+        // Look up brand ID (brand is a foreign key in schema)
+        const brandRecord = brands.find((b: any) => b.name === rowBrand);
+        if (!brandRecord) {
+          console.error(`Brand "${rowBrand}" not found for SKU ${sku}, skipping product`);
+          continue;
+        }
+        const productName = mapping.name && row[mapping.name] 
+          ? row[mapping.name] 
+          : `${rowBrand} - ${sku}`;
+        // Create virtual stock product (no quantity tracking - pre-order only)
+        const newProduct = await storage.createProduct({
+          sku,
+          barcode: mapping.barcode && row[mapping.barcode] ? row[mapping.barcode] : '',
+          name: productName,
+          brand: brandRecord.id, // Brand is foreign key - pass ID
+          category: rowCategory, // Category is text - pass name as-is
+          gender: rowGender,
+          wholesalePrice: '0',
+          retailPrice: '0',
+          minOrder: 1,
+          colors: mapping.color && row[mapping.color] ? [row[mapping.color]] : [],
+          availableSizes: [], // Virtual stock - no physical inventory (pre-order items)
+          imageUrl: mapping.imageUrl && row[mapping.imageUrl] ? row[mapping.imageUrl] : 'https://via.placeholder.com/400x400?text=No+Image',
+          description: mapping.description && row[mapping.description] ? row[mapping.description] : 'Pre-order item - Virtual stock',
+          collections: [collectionName],
+          division: mapping.division && row[mapping.division] ? row[mapping.division] : '',
+          countryOfOrigin: mapping.countryOfOrigin && row[mapping.countryOfOrigin] ? row[mapping.countryOfOrigin] : ''
+        });
+        product = newProduct;
+        productsCreated++;
+      } else {
+        // Add collection to existing product
+        const currentCollections = product.collections || [];
+        if (!currentCollections.includes(collectionName)) {
+          await storage.updateProduct(product.id, {
+            collections: [...currentCollections, collectionName]
+          });
+        }
+      }
+      if (product && product.id) {
+        productIds.push(product.id);
+      }
+    }
+    // Create the collection
+    const collectionSlug = collectionName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const collection = await storage.createCollection({
+      name: collectionName,
+      slug: collectionSlug,
+      description: `Pre-order collection: ${collectionName}`,
+      discount: '0',
+      productIds,
+      isActive: true,
+      featured: true,
+      imageUrl: collectionImage,
+      priority: 100
+    });
+    // Clean up temp data file if it exists
+    const tempDataPath = path.join(import.meta.dirname, '../uploads/temp', `${tempDataId}.json`);
+    if (fs.existsSync(tempDataPath)) {
+      fs.unlinkSync(tempDataPath);
+    }
+    res.json({
+      collectionId: collection.id,
+      collectionName: collection.name,
+      productCount: productIds.length,
+      productsCreated
+    });
+  } catch (error) {
+    console.error("Error processing pre-order collection:", error);
+    res.status(500).json({ message: "Failed to process pre-order collection" });
+  }
+});
+Frontend Implementation
+1. Create Component: client/src/components/PreOrderUpload.tsx
+import { useState, useEffect } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Upload, FileSpreadsheet, CheckCircle2, Heart, RefreshCw } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+interface PreviewData {
+  totalRows: number;
+  previewRows: any[];
+  columns: string[];
+  fileName: string;
+  tempDataId: string;
+}
+interface ColumnMapping {
+  sku: string;
+  barcode: string;
+  name: string;
+  brand: string;
+  category: string;
+  gender: string;
+  color: string;
+  size: string;
+  imageUrl: string;
+  description: string;
+}
+export function PreOrderUpload() {
+  const { toast } = useToast();
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<PreviewData | null>(null);
+  const [mapping, setMapping] = useState<ColumnMapping>({
+    sku: '',
+    barcode: '',
+    name: '',
+    brand: '',
+    category: '',
+    gender: '',
+    color: '',
+    size: '',
+    imageUrl: '',
+    description: ''
+  });
+  const [isDragging, setIsDragging] = useState(false);
+  const [step, setStep] = useState<'upload' | 'mapping' | 'preview' | 'collection-info' | 'processing' | 'complete'>('upload');
+  const [collectionName, setCollectionName] = useState('');
+  const [collectionImage, setCollectionImage] = useState('');
+  const [previewRows, setPreviewRows] = useState<any[]>([]);
+  const [defaultValues, setDefaultValues] = useState({
+    brand: 'Unknown Brand',
+    category: 'General',
+    gender: 'Unisex',
+    name: '',
+    imageUrl: 'https://via.placeholder.com/400x400?text=No+Image',
+    description: 'No description available',
+  });
+  const { data: brands = [] } = useQuery<any[]>({
+    queryKey: ['/api/brands'],
+    enabled: step === 'mapping' || step === 'preview' || step === 'collection-info'
+  });
+  const { data: categories = [] } = useQuery<any[]>({
+    queryKey: ['/api/categories'],
+    enabled: step === 'mapping' || step === 'preview' || step === 'collection-info'
+  });
+  // Set first available brand/category as default when data loads
+  useEffect(() => {
+    if (brands.length > 0 && defaultValues.brand === 'Unknown Brand') {
+      const firstActiveBrand = brands.find((b: any) => b.isActive);
+      if (firstActiveBrand) {
+        setDefaultValues(prev => ({ ...prev, brand: firstActiveBrand.name }));
+      }
+    }
+  }, [brands]);
+  useEffect(() => {
+    if (categories.length > 0 && defaultValues.category === 'General') {
+      const firstActiveCategory = categories.find((c: any) => c.isActive);
+      if (firstActiveCategory) {
+        setDefaultValues(prev => ({ ...prev, category: firstActiveCategory.name }));
+      }
+    }
+  }, [categories]);
+  // File handling functions...
+  const handleShowPreview = () => {
+    if (!mapping.sku) {
+      toast({
+        title: "Missing required field",
+        description: "UPC field is required",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Apply defaults to preview rows - keep original row data intact
+    if (preview) {
+      const rowsWithDefaults = preview.previewRows.map((row: any) => ({
+        ...row, // Keep all original column data
+        _brand: row[mapping.brand] || defaultValues.brand, // Store processed brand
+        _category: row[mapping.category] || defaultValues.category, // Store processed category
+        _gender: row[mapping.gender] || defaultValues.gender, // Store processed gender
+      }));
+      setPreviewRows(rowsWithDefaults);
+    }
+    
+    setStep('preview');
+  };
+  const processPreOrderMutation = useMutation({
+    mutationFn: async () => {
+      if (!preview) throw new Error("No preview data");
+      
+      const response = await apiRequest('/api/preorder/process', 'POST', {
+        tempDataId: preview.tempDataId,
+        mapping,
+        processedRows: previewRows, // Send the edited preview rows with applied defaults
+        collectionName,
+        collectionImage: collectionImage || 'https://via.placeholder.com/400x400?text=Collection',
+        defaultBrand: defaultValues.brand,
+        defaultCategory: defaultValues.category,
+        defaultGender: defaultValues.gender,
+      });
+      
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/collections'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      
+      toast({
+        title: "✓ Pre Order Collection Created",
+        description: `${collectionName} with ${data.productCount || 0} products is now available`,
+      });
+      
+      setStep('complete');
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to create collection",
+        description: error.message || "Failed to create pre order collection",
+        variant: "destructive",
+      });
+    }
+  });
+  // Render preview step with default values section
+  return (
+    <div className="space-y-6">
+      {/* Upload, Mapping, Preview, Collection Info, Complete steps... */}
+      {step === 'preview' && preview && (
+        <div className="space-y-6">
+          <Card className="p-6">
+            {/* Default Values Section */}
+            <Card className="p-6 mb-6 bg-gradient-to-r from-pink-50 to-purple-50 border-pink-200">
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold">Default Values for All Products</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  These values will apply to all empty fields in your collection
+                </p>
+              </div>
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                <div>
+                  <Label>Brand *</Label>
+                  <Select
+                    value={defaultValues.brand}
+                    onValueChange={(value) => setDefaultValues({...defaultValues, brand: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select brand" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {brands.filter((b: any) => b.isActive).map((brand: any) => (
+                        <SelectItem key={brand.id} value={brand.name}>
+                          {brand.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {/* Category and Gender selects... */}
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  onClick={() => {
+                    const updated = previewRows.map(row => ({
+                      ...row, // Keep all original data
+                      _brand: row._brand || defaultValues.brand,
+                      _category: row._category || defaultValues.category,
+                      _gender: row._gender || defaultValues.gender,
+                    }));
+                    setPreviewRows(updated);
+                    toast({
+                      title: "✓ Defaults applied",
+                      description: "Empty fields have been filled with your default values",
+                    });
+                  }}
+                  variant="default"
+                  size="sm"
+                  className="bg-pink-600 hover:bg-pink-700"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Apply to Empty Fields
+                </Button>
+              </div>
+            </Card>
+            {/* Preview Table showing _brand, _category, _gender */}
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+}
+2. Create Page: client/src/pages/stock-preorder.tsx
+import { PreOrderUpload } from "@/components/PreOrderUpload";
+export default function StockPreOrderPage() {
+  return (
+    <div className="p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">Pre Order Collections</h1>
+        <p className="text-muted-foreground">
+          Create virtual stock collections for on-demand ordering from vendors
+        </p>
+      </div>
+      <PreOrderUpload />
+    </div>
+  );
+}
+3. Update Sidebar: client/src/components/SidebarNav.tsx
+Add to Stock Control submenu:
+
+{
+  title: "Pre Order",
+  href: "/stock-control/pre-order",
+  icon: Heart,
+}
+4. Update Router: client/src/App.tsx
+import StockPreOrderPage from "@/pages/stock-preorder";
+// Add route:
+<Route path="/stock-control/pre-order" component={StockPreOrderPage} />
+Key Implementation Details
+1. Data Flow
+Upload File → Map Columns → Preview with Defaults → Collection Info → Process
+2. Processed Rows Structure
+Frontend sends rows with both original and processed data:
+
+{
+  "UPC": "12345",           // Original column
+  "Brand": "Nike",          // Original column  
+  "_brand": "Adidas",       // Processed (after Apply to Empty)
+  "_category": "Footwear",  // Processed
+  "_gender": "Men"          // Processed
+}
+3. Backend Processing Priority
+const rowBrand = row._brand || row[mapping.brand] || defaultBrand;
+Priority: Processed field → Mapped column → Default value
+
+4. Brand vs Category Handling
+Brand: Foreign key - requires ID lookup from brands table
+Category: Text field - use name directly
+Step-by-Step Implementation Guide
+Add Backend Routes (server/routes.ts)
+
+Add both endpoints after existing stock routes
+Ensure multer upload middleware is configured
+Create Frontend Component (PreOrderUpload.tsx)
+
+Full component with all 5 steps
+Preview step with default values section
+Apply to Empty Fields functionality
+Create Page (stock-preorder.tsx)
+
+Simple wrapper for PreOrderUpload component
+Update Navigation (SidebarNav.tsx)
+
+Add "Pre Order" to Stock Control submenu
+Add Route (App.tsx)
+
+Register /stock-control/pre-order route
+Test Flow
+
+Upload CSV/Excel with UPC column
+Map UPC (required)
+Preview and apply defaults
+Enter collection name
+Process
+Testing Checklist
+ Upload CSV file with products
+ Map UPC column (required)
+ See preview with default brand/category pre-filled
+ Click "Apply to Empty Fields" - verify fields update
+ Change default brand - click apply again - verify update
+ Enter collection name and image URL
+ Process - verify collection created
+ Check products appear in catalog under collection tab
+ Verify brand foreign key is correct (not UUID shown)
+ Verify category text is correct
+This specification provides everything needed to implement the Pre Order Collection feature in another Replit instance.
+

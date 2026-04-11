@@ -1,0 +1,584 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Hide scrollbar utility - keeps scrolling but hides the handle */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  overflow-y: scroll;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar globally on html/body */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+}
+
+html, body {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  min-height: 100vh;
+  height: 100%;
+}
+
+/* Excel-like spreadsheet styles */
+.excel-table-container {
+  background: #ffffff;
+  user-select: none;
+}
+
+.dark .excel-table-container {
+  background: hsl(var(--card));
+}
+
+.excel-table {
+  border-spacing: 0;
+  border-collapse: separate;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Active cell - Excel's signature blue border */
+.excel-active-cell {
+  border: 2px solid #217346 !important;
+  background: rgba(33, 115, 70, 0.05);
+  position: relative;
+  z-index: 2;
+  box-shadow: inset 0 0 0 1px #217346;
+}
+
+.dark .excel-active-cell {
+  border: 2px solid #4ade80 !important;
+  background: rgba(74, 222, 128, 0.1);
+  box-shadow: inset 0 0 0 1px #4ade80;
+}
+
+/* Selected cells - Light blue background */
+.excel-selected-cell {
+  background: rgba(0, 120, 215, 0.15) !important;
+  border: 1px solid #0078d4;
+}
+
+.dark .excel-selected-cell {
+  background: rgba(59, 130, 246, 0.2) !important;
+  border: 1px solid #3b82f6;
+}
+
+/* Editable cells hover effect */
+.excel-editable-cell:hover {
+  background: rgba(0, 120, 215, 0.08) !important;
+  border: 1px solid rgba(0, 120, 215, 0.3);
+  cursor: cell;
+}
+
+.dark .excel-editable-cell:hover {
+  background: rgba(59, 130, 246, 0.1) !important;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+/* Row and column headers */
+.excel-table th {
+  background: hsl(var(--muted));
+  border: 1px solid hsl(var(--border));
+  font-weight: 600;
+  text-align: left;
+  position: relative;
+}
+
+.excel-table td {
+  border: 1px solid hsl(var(--border));
+  transition: all 0.1s ease;
+  position: relative;
+}
+
+/* Cell focus ring for keyboard navigation */
+.excel-table-container:focus .excel-active-cell {
+  outline: none;
+  box-shadow: 
+    inset 0 0 0 2px #217346,
+    0 0 0 2px rgba(33, 115, 70, 0.3);
+}
+
+.dark .excel-table-container:focus .excel-active-cell {
+  box-shadow: 
+    inset 0 0 0 2px #4ade80,
+    0 0 0 2px rgba(74, 222, 128, 0.3);
+}
+
+/* Selection range highlighting */
+.excel-selection-range {
+  background: linear-gradient(135deg, 
+    rgba(0, 120, 215, 0.1) 0%, 
+    rgba(0, 120, 215, 0.05) 50%, 
+    rgba(0, 120, 215, 0.1) 100%);
+  border: 1px dashed #0078d4;
+}
+
+.dark .excel-selection-range {
+  background: linear-gradient(135deg, 
+    rgba(59, 130, 246, 0.15) 0%, 
+    rgba(59, 130, 246, 0.08) 50%, 
+    rgba(59, 130, 246, 0.15) 100%);
+  border: 1px dashed #3b82f6;
+}
+
+/* Header hover effects */
+.excel-table th:hover {
+  background: hsl(var(--muted) / 0.8);
+}
+
+/* Smooth transitions */
+.excel-table td,
+.excel-table th {
+  transition: background-color 0.1s ease, border-color 0.1s ease;
+}
+
+/* Cell content alignment */
+.excel-table td .cell-content {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 4px 8px;
+}
+
+/* Number cells right-aligned */
+.excel-table td[data-type="number"] .cell-content {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+/* Editing input styles */
+.excel-table td input {
+  background: #ffffff;
+  border: 2px solid #0078d4;
+  outline: none;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.dark .excel-table td input {
+  background: hsl(var(--card));
+  border: 2px solid #3b82f6;
+  color: hsl(var(--foreground));
+}
+
+:root {
+  --background: 0 0% 98%;
+  --foreground: 230 30% 25%;
+  --card: 0 0% 100%;
+  --card-foreground: 230 30% 25%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 230 30% 25%;
+  /* rgb(254, 68, 56) */
+  --primary: 4 99% 61%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 230 30% 25%;
+  --muted: 210 30% 95%;
+  --muted-foreground: 230 15% 50%;
+  --accent: 45 95% 58%;
+  --accent-foreground: 230 60% 30%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 210 25% 90%;
+  --input: 210 25% 90%;
+  --ring: 4 99% 61%;
+  --success: 145 65% 45%;
+  --warning: 25 95% 53%;
+  --info: 205 90% 50%;
+  --chart-1: hsl(230, 60%, 30%);
+  --chart-2: hsl(45, 95%, 58%);
+  --chart-3: hsl(145, 65%, 45%);
+  --chart-4: hsl(25, 95%, 53%);
+  --chart-5: hsl(280, 70%, 60%);
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 30 20% 20%;
+  --sidebar-primary: 25 95% 55%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 0 0% 96%;
+  --sidebar-accent-foreground: 30 20% 20%;
+  --sidebar-border: 0 0% 90%;
+  --sidebar-ring: 25 95% 55%;
+  --gradient-primary: linear-gradient(135deg, rgb(254, 68, 56) 0%, hsl(4, 99%, 54%) 100%);
+  --gradient-accent: linear-gradient(135deg, hsl(45, 95%, 58%) 0%, hsl(40, 90%, 50%) 100%);
+  --gradient-success: linear-gradient(135deg, hsl(145, 65%, 45%) 0%, hsl(150, 60%, 50%) 100%);
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-serif: 'Inter', system-ui, sans-serif;
+  --font-mono: Menlo, monospace;
+  --radius: 0.5rem;
+  --spacing: 0.25rem;
+  --tracking-normal: 0em;
+}
+
+.dark {
+  --background: 230 30% 8%;
+  --foreground: 210 40% 98%;
+  --card: 230 25% 12%;
+  --card-foreground: 210 40% 98%;
+  --popover: 230 25% 12%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 4 99% 61%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 230 20% 18%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 230 15% 15%;
+  --muted-foreground: 217 15% 70%;
+  --accent: 45 90% 60%;
+  --accent-foreground: 230 60% 20%;
+  --destructive: 0 84% 65%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 230 20% 20%;
+  --input: 230 20% 20%;
+  --ring: 4 99% 61%;
+  --success: 145 70% 50%;
+  --warning: 25 90% 60%;
+  --info: 205 85% 55%;
+  --sidebar: 25 20% 15%;
+  --sidebar-foreground: 30 20% 95%;
+  --sidebar-primary: 25 95% 55%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 25 20% 22%;
+  --sidebar-accent-foreground: 30 20% 95%;
+  --sidebar-border: 25 15% 20%;
+  --sidebar-ring: 25 95% 55%;
+  --chart-1: hsl(230, 55%, 40%);
+  --chart-2: hsl(45, 90%, 60%);
+  --chart-3: hsl(145, 70%, 50%);
+  --chart-4: hsl(25, 90%, 60%);
+  --chart-5: hsl(280, 80%, 65%);
+  --gradient-primary: linear-gradient(135deg, rgb(254, 68, 56) 0%, hsl(4, 99%, 54%) 100%);
+  --gradient-accent: linear-gradient(135deg, hsl(45, 90%, 60%) 0%, hsl(40, 85%, 55%) 100%);
+  --gradient-success: linear-gradient(135deg, hsl(145, 70%, 50%) 0%, hsl(150, 65%, 55%) 100%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Glass morphism effect */
+.glass-morphism {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass-morphism {
+  background: rgba(16, 16, 16, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Product card animations */
+.product-card {
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.product-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Size grid cell animations */
+.size-grid-cell {
+  transition: all 0.15s ease;
+}
+
+.size-grid-cell:hover {
+  transform: scale(1.05);
+}
+
+.size-grid-cell.selected {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+/* Filter pill animations */
+.filter-pill {
+  transition: all 0.2s ease;
+}
+
+.filter-pill:hover {
+  transform: translateY(-1px);
+}
+
+/* Cart item animations */
+.cart-item {
+  transition: all 0.3s ease;
+}
+
+.cart-item.removing {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+/* Slide in animation */
+.slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from { 
+    transform: translateX(100%); 
+    opacity: 0; 
+  }
+  to { 
+    transform: translateX(0); 
+    opacity: 1; 
+  }
+}
+
+/* Rubber band selection effect */
+.rubber-band-selection {
+  position: absolute;
+  border: 2px solid hsl(var(--primary));
+  background: hsla(221, 83%, 53%, 0.15);
+  pointer-events: none;
+  z-index: 100;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Selection zone */
+.selection-zone {
+  border: 2px dashed hsl(var(--primary));
+  background: hsla(221, 83%, 53%, 0.1);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+/* Enhanced matrix cell hover effects */
+.matrix-cell {
+  transition: all 0.15s cubic-bezier(0.4, 0.0, 0.2, 1);
+  transform-origin: center;
+}
+
+.matrix-cell:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.matrix-cell.selected {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 2px hsl(var(--primary)), 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.matrix-cell.in-drag-selection {
+  transform: scale(1.1);
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  box-shadow: 0 0 0 2px hsl(var(--primary)), 0 8px 16px rgba(0, 0, 0, 0.25);
+}
+
+/* Product expansion animation */
+.product-expanded {
+  transform: scale(1.02);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+/* macOS-style glass effect for overlays */
+.macos-glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.dark .macos-glass {
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Smooth transitions for all interactive elements */
+.smooth-transition {
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Enhanced size grid animations */
+.size-grid-interactive {
+  cursor: crosshair;
+  user-select: none;
+}
+
+.size-grid-interactive .matrix-cell {
+  border: 2px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.size-grid-interactive .matrix-cell::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.3s;
+}
+
+.size-grid-interactive .matrix-cell:hover::before {
+  left: 100%;
+}
+
+/* Excel-style table improvements */
+.excel-table {
+  font-family: 'SF Pro Display', system-ui, sans-serif;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.excel-table th {
+  background: hsl(var(--muted));
+  border-right: 1px solid hsl(var(--border));
+  border-bottom: 2px solid hsl(var(--border));
+  font-weight: 600;
+  text-align: left;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.excel-table td {
+  border-right: 1px solid hsl(var(--border));
+  border-bottom: 1px solid hsl(var(--border));
+  vertical-align: middle;
+}
+
+.excel-table tr:hover {
+  background: hsl(var(--muted) / 0.3);
+}
+
+.excel-table tr.selected {
+  background: hsl(var(--primary) / 0.1);
+}
+
+.excel-table tr.drag-over {
+  background: hsl(var(--primary) / 0.2);
+  border-color: hsl(var(--primary));
+}
+
+/* Row drag indicator */
+.excel-row-dragging {
+  opacity: 0.5;
+  transform: rotate(2deg);
+  z-index: 1000;
+}
+
+/* Excel cell focus styles */
+.excel-cell-focused {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: -2px;
+  background: hsl(var(--primary) / 0.1);
+}
+
+/* Brand card enhancements */
+.brand-card {
+  background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--muted) / 0.3) 100%);
+  border: 1px solid hsl(var(--border));
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.brand-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+  border-color: hsl(var(--primary) / 0.5);
+}
+
+.brand-card.selected {
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.1) 0%, hsl(var(--primary) / 0.05) 100%);
+  border-color: hsl(var(--primary));
+  box-shadow: 0 8px 24px hsl(var(--primary) / 0.2);
+}
+
+/* Excel input focus improvements */
+.excel-quantity-input {
+  text-align: center;
+  font-weight: 600;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.excel-quantity-input:focus {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2);
+  background: hsl(var(--background));
+}
+
+/* Loading shimmer */
+.loading-shimmer {
+  background: linear-gradient(90deg, hsl(var(--muted)) 25%, hsl(var(--muted-foreground)/0.1) 50%, hsl(var(--muted)) 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Custom scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground)/0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground)/0.5);
+}
+
+/* Focus styles for accessibility */
+.focus\:ring-2:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px hsl(var(--ring));
+}
+
+/* Improved button hover states */
+.hover\:scale-105:hover {
+  transform: scale(1.05);
+}
+
+.hover\:scale-110:hover {
+  transform: scale(1.1);
+}
+
+/* Hide scrollbar while maintaining scroll functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Dropdown menu item hover styling */
+[role="menuitem"]:hover,
+[role="menuitem"]:focus {
+  color: #FD4338 !important;
+  background-color: rgba(253, 67, 56, 0.1) !important;
+}
+
+/* Ensure dropdown items have the right hover text color */
+[role="menuitem"] a:hover,
+[role="menuitem"] a:focus {
+  color: #FD4338 !important;
+}

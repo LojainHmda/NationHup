@@ -1,0 +1,61 @@
+Replace color selections with images, since many items don’t have color variants — only photos. Each color should have its own unique UPC.
+
+Allow users to assign a name to each order.
+
+Add a nickname field.
+
+Enable classification by brand.
+
+Make the “Add to Cart” button clear and allow removal from the cart. Show the total amount if possible.
+
+Show subtotal per line item as well as the overall total.
+
+Split the invoice into sub-invoices by brand (i.e., each brand generates its own sub-invoice).
+
+Promotions can be either a fixed discount percentage or a fixed price.
+
+Categorization inside the order should be structured as:
+
+A. Brand
+
+B. Deals
+
+C. Collection
+
+D. Flash Sales
+
+In the Dashboard → Order History, show the customer category, order status, and a full list of all their orders.
+
+Add functionality to import inventory either manually or via Excel sheet.
+
+When importing from Excel, the system should use UPC as the main identifier.
+
+If there’s a mismatch in RRP (Retail Recommended Price) for the same UPC, the system should pause and alert the user for a decision.
+
+If prices match, the system should continue processing.
+
+Editing (modification) should be restricted by certain rules or permissions.
+
+Each item should be linked by a combination of UPC + Size + Barcode.
+
+Add a clear mechanism to upload product images to the website.
+
+“That’s all I remember for now.”
+
+💡 Elicited Functional Requirements
+#	Requirement	Description / System Behavior
+1	Image-Based Variants	Replace color dropdowns with product images; each color variation must have a unique UPC.
+2	Order Naming	Users can assign a custom name to their order for easier identification.
+3	Order Nickname	Add an optional nickname field for quick reference (e.g., “Summer Order,” “Retail Batch”).
+4	Brand-Based Classification	Orders and products should be grouped and filterable by brand.
+5	Improved Cart UX	“Add to Cart” button should be clearly visible, allow item removal, and display a running total.
+6	Line Item Totals	Show a subtotal for each line item and a cumulative total for the order.
+7	Brand-Based Invoicing	Generate sub-invoices per brand within a single order.
+8	Deals Management	Promotions can be configured as either percentage discounts or fixed-price offers.
+9	Category Segmentation	Order listing should support categories: Brand, Deals, Collection, Flash Sales.
+10	Order History Dashboard	Show customer category, order status, and all historical orders with details.
+11	Inventory Input Options	Support adding products manually or by Excel upload.
+12	Excel Upload Validation	Use UPC as the unique key; system checks RRP differences and prompts the user if mismatched.
+13	Edit Restrictions	Editing inventory or orders should follow specific permission or validation rules.
+14	Data Mapping	Each product record links UPC + Size + Barcode for uniqueness.
+15	Image Upload Mechanism	Provide an interface or bulk upload process for product images.

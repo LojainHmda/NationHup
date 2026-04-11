@@ -1,0 +1,147 @@
+Technical Specifications
+Dependencies Required
+{
+  "@tanstack/react-query": "^5.x",
+  "wouter": "^3.x",
+  "lucide-react": "^0.x",
+  "xlsx": "^0.x"
+}
+Features
+Dynamic Pivot Engine - Drag-and-drop dimension nesting
+10 Grouping Dimensions - Cart Source, Brand, Size, Age Group, Category, Color, Main Category, Model, SKU, Product Name
+Recursive Hierarchical Grouping - Unlimited nesting depth
+Aggregated Metrics - Volume (quantity) and Aggregate Value (total price)
+Excel Export - Flattens hierarchy with full path
+Search - Filter by product name, SKU, brand, size, or cart
+Expandable Tree Table - Visual indentation with color-coded depth indicators
+Data Requirements
+The component expects cart data with this structure:
+
+interface CartItem {
+  productId: string;
+  productName: string;
+  sku: string;
+  brand: string;
+  size: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  color?: string;
+}
+Route Setup
+Add to your App.tsx:
+
+<Route path="/cart-hierarchy" component={CartHierarchyPage} />
+Complete Component Code
+import { useState, useMemo, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useLocation, useSearch } from 'wouter';
+import { ArrowLeft, GripVertical, Lock, ChevronDown, ChevronRight, Package, Download, Search, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useCartContext } from '@/hooks/useCartContext';
+import type { Product, Brand } from '@shared/schema';
+import * as XLSX from 'xlsx';
+type GroupingKey = 'brand' | 'cartSource' | 'size' | 'ageGroup' | 'category' | 'color' | 'mainCategory' | 'model' | 'sku' | 'productName';
+interface DimensionConfig {
+  key: GroupingKey;
+  label: string;
+  getValue: (item: CartItemFlat, product?: Product, brands?: Brand[]) => string;
+}
+interface CartItemFlat {
+  productId: string;
+  productName: string;
+  sku: string;
+  brand: string;
+  size: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  color: string;
+  cartSource: string;
+  cartId: string;
+  category?: string;
+  ageGroup?: string;
+  mainCategory?: string;
+  model?: string;
+  imageUrl?: string;
+}
+interface TreeNode {
+  key: string;
+  label: string;
+  dimension: string;
+  volume: number;
+  aggregateValue: number;
+  skuCount: number;
+  children: TreeNode[];
+  items: CartItemFlat[];
+  depth: number;
+}
+const DIMENSION_CONFIGS: Record<GroupingKey, DimensionConfig> = {
+  brand: {
+    key: 'brand',
+    label: 'BRAND',
+    getValue: (item, product, brands) => {
+      const brandId = item.brand || product?.brand;
+      const brandObj = brands?.find(b => b.id === brandId);
+      return brandObj?.name || brandId || 'Unknown';
+    }
+  },
+  cartSource: {
+    key: 'cartSource',
+    label: 'CART SOURCE',
+    getValue: (item) => item.cartSource || 'Unknown Cart'
+  },
+  size: {
+    key: 'size',
+    label: 'SIZE',
+    getValue: (item) => item.size || 'Unknown'
+  },
+  ageGroup: {
+    key: 'ageGroup',
+    label: 'AGE GROUP',
+    getValue: (item, product) => product?.ageGroup || item.ageGroup || 'Unknown'
+  },
+  category: {
+    key: 'category',
+    label: 'CATEGORY',
+    getValue: (item, product) => product?.category || item.category || 'Unknown'
+  },
+  color: {
+    key: 'color',
+    label: 'COLOR',
+    getValue: (item) => item.color || 'Unknown'
+  },
+  mainCategory: {
+    key: 'mainCategory',
+    label: 'MAIN CATEGORY',
+    getValue: (item, product) => product?.mainCategory || item.mainCategory || 'Unknown'
+  },
+  model: {
+    key: 'model',
+    label: 'MODEL',
+    getValue: (item, product) => product?.model || item.model || 'Unknown'
+  },
+  sku: {
+    key: 'sku',
+    label: 'SKU',
+    getValue: (item) => item.sku || 'Unknown'
+  },
+  productName: {
+    key: 'productName',
+    label: 'PRODUCT NAME',
+    getValue: (item) => item.productName || 'Unknown'
+  }
+};
+const ALL_DIMENSIONS: GroupingKey[] = ['cartSource', 'brand', 'size', 'ageGroup', 'category', 'color', 'mainCategory', 'model', 'sku', 'productName'];
+const parseNumber = (val: any): number => {
+  if (typeof val === 'number') return val;
+  if (typeof val === 'string') {
+    const parsed = parseFloat(val);
+    return isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
+};
+export default function CartHierarchyPage() {
+  // ... (full component code as shown in the file)
+}

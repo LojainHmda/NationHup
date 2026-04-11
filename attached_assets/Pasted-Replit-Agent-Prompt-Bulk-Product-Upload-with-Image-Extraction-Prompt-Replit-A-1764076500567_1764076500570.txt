@@ -1,0 +1,111 @@
+Replit Agent Prompt - Bulk Product Upload with Image Extraction
+نسخ والصق هذا الـ Prompt في Replit Agent:
+
+Build a bulk product upload system that extracts embedded images from Excel files and uploads them to Google Drive.
+Main Feature - Excel Upload with Automatic Image Processing:
+Core Workflow:
+
+User uploads Excel file with embedded images
+System extracts images from Excel cells
+Uploads images to Google Drive automatically
+Gets Google Drive URLs for each image
+Shows column mapping interface
+Imports all products with image URLs to database
+
+Technical Requirements:
+1. Image Extraction from Excel:
+
+Use exceljs library to read Excel files with images
+Extract all embedded images from cells
+Support multiple image formats (JPG, PNG)
+Name extracted images using Article Number (e.g., 12345.jpg)
+Handle cells with multiple images (save as array of URLs)
+
+2. Google Drive Integration:
+
+Use Google Drive API to upload images
+Create folder structure: /products/images/
+Make uploaded images publicly accessible
+Get shareable URL for each image
+Store URLs in format: https://drive.google.com/uc?id=FILE_ID
+
+3. Upload Interface:
+
+Drag & drop Excel file upload
+Show upload progress
+Display message: "Extracting images... (X of Y)"
+Display message: "Uploading to Google Drive... (X of Y)"
+After images uploaded, show mapping interface
+
+4. Column Mapping Screen:
+
+Show all Excel columns on left
+Dropdown menus on right to select database fields
+Auto-detect column names and suggest mappings
+Special handling for Images column (show thumbnail preview)
+Preview first 10 products with images
+Required database fields:
+
+Images (Google Drive URLs)
+Article Number (unique ID)
+Key Category
+Brand
+Model Name
+Colourway
+Age Group
+Gender
+Corporate Marketing Line
+Product Line
+Product Type
+Sports Category
+MOQ
+Conditions
+Material Composition
+Retail Price
+Price
+Discount
+
+
+
+5. Import Process:
+
+Validate all data before import
+Check for duplicate Article Numbers
+Show progress: "Importing product X of Y"
+Handle errors gracefully
+Final summary: "✅ Imported 1000 products with 1000 images"
+
+6. Product View After Import:
+
+Table showing all products
+Display images as thumbnails
+Edit/delete options
+Filter and search
+Export to Excel option
+
+Tech Stack:
+
+Backend: Node.js + Express
+Excel Processing: exceljs (supports image extraction)
+Google Drive: googleapis npm package
+Database: PostgreSQL or SQLite
+Frontend: React with progress indicators
+File Upload: multer
+
+Google Drive API Setup:
+Create endpoint for Google Drive authentication:
+
+Use service account credentials (from .env file)
+Auto-upload images to specific folder
+Return public URLs
+
+Important Features:
+
+Batch image upload - upload 100 images at a time to avoid timeout
+Error handling - if image upload fails, log it and continue
+Mapping templates - save column mappings for reuse
+Image validation - check file size and format
+Progress tracking - real-time updates during processing
+Rollback option - if import fails, delete uploaded images
+
+User Flow Example:

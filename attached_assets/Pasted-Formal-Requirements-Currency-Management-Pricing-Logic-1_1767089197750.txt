@@ -1,0 +1,93 @@
+Formal Requirements – Currency Management & Pricing Logic
+
+1. Supported Currencies (Baseline)
+
+The system shall support the following currencies by default:
+
+ILS (Shekel)
+
+USD (US Dollar)
+
+EUR (Euro)
+
+JOD (Jordanian Dinar)
+
+GBP (British Pound)
+
+2. Manual Currency Extension
+
+The system shall allow manual addition of new currencies.
+
+A currency can be added:
+
+During product/collection upload, or
+
+From the Admin Panel under currency management.
+
+Any manually added currency must be configurable with exchange rates before being used in pricing.
+
+3. Product & Collection Currency Assignment
+
+Each product or collection must be associated with one base currency only.
+
+The selected currency must be either:
+
+One of the supported default currencies, or
+
+A manually added currency.
+
+Product prices shall be stored in their assigned base currency.
+
+4. Customer Profile – Default Currency
+
+When creating a Customer Profile, exactly one default display currency must be selected.
+
+This currency determines how all product prices are displayed to the customer.
+
+The customer shall be able to change the default currency from their profile settings.
+
+5. Admin Panel – Exchange Rate Management
+
+The Admin Panel shall act as the single source of truth for all exchange rates.
+
+The admin must be able to:
+
+Define and update exchange rates between all supported and manually added currencies.
+
+No currency conversion shall occur without an admin-defined exchange rate.
+
+6. Pricing & Conversion Logic
+
+If the product currency matches the customer’s default currency:
+
+The price is displayed as stored.
+
+If the product currency differs from the customer’s default currency:
+
+The system shall automatically convert the price using the admin-defined exchange rate.
+
+The converted price shall be displayed in the customer’s selected currency.
+
+7. Real-Time Price Reflection
+
+Any update to exchange rates in the Admin Panel shall:
+
+Immediately reflect across all customer-facing product prices.
+
+Require no manual reconfiguration of products.
+
+8. Customer-Facing Display Rules
+
+Customers shall see prices only in their selected default currency.
+
+No alternative currencies or raw base prices shall be exposed to the customer.
+
+9. Business Outcome
+
+Centralized currency control
+
+Consistent pricing logic across the platform
+
+Scalable and extensible currency architecture
+
+Zero ambiguity between admin pricing and customer display

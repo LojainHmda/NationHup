@@ -1,0 +1,18 @@
+node_modules
+dist
+.local
+.env
+.env.*
+!.env.example
+debug.log
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
+
+# Runtime upload scratch (can exceed GitHub 100MB limit)
+uploads/temp/
+
+# Pasted credential dumps (GitHub push protection / secret scanning)
+attached_assets/*private-key-id*.txt
+attached_assets/*GOOGLE-CREDS*.txt

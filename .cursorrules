@@ -1,0 +1,24 @@
+## Change Tracking Rules
+
+After EVERY code change, update `DEVLOG.md` with:
+
+- Timestamp
+- File(s) modified
+- What changed and why
+- Sequence number
+
+Format:
+
+```
+---
+### [SEQ-NNN] YYYY-MM-DD HH:mm
+**Files:** path/to/a.ts, path/to/b.tsx
+**Action:** Short title of the change
+**Details:** Concrete description of edits, behavior, or APIs touched
+**Reason:** Why the change was made (ticket, bug, request, refactor)
+---
+```
+
+Always increment the sequence number (`SEQ-001`, `SEQ-002`, …). Never skip an entry for a completed change batch. If multiple files are part of one logical change, use one entry listing all files.
+
+Use the next sequence number after the latest `### [SEQ-...]` heading in `DEVLOG.md`.

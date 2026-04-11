@@ -1,0 +1,130 @@
+
+import React, { useState } from 'react';
+import { Tab, CompanyData } from './types';
+import { CompanyInfoForm } from './components/CompanyInfoForm';
+
+const App: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<Tab>(Tab.CompanyInfo);
+  const [companyData, setCompanyData] = useState<CompanyData>({
+    legalName: 'ABC Corporation Ltd.',
+    tradingName: 'ABC Shoes',
+    businessType: 'Retail',
+    status: 'Active',
+    taxNumber: 'GB123456789',
+    registrationCountry: 'United Kingdom',
+    primaryContact: 'John Doe',
+    phone: '+44 20 7946 0958',
+    email: 'contact@company.com',
+    currency: 'USD',
+    licenseTradeNumber: '',
+    businessOwner: '',
+    attachments: []
+  });
+
+  const handleDataChange = (updates: Partial<CompanyData>) => {
+    setCompanyData(prev => ({ ...prev, ...updates }));
+  };
+
+  const tabs = Object.values(Tab);
+
+  const getTabIcon = (tab: Tab) => {
+    switch (tab) {
+      case Tab.CompanyInfo: return 'fa-building';
+      case Tab.Addresses: return 'fa-map-marker-alt';
+      case Tab.ApprovalWorkflow: return 'fa-cog';
+      case Tab.Advanced: return 'fa-file-alt';
+      default: return 'fa-circle';
+    }
+  };
+
+  return (
+    <div className="min-h-screen pb-20">
+      {/* Top Navbar */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-200">
+              <i className="fas fa-shield-halved"></i>
+            </div>
+            <span className="font-bold text-slate-800 tracking-tight text-xl">AdminPortal</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <button className="text-slate-500 hover:text-slate-800 transition-colors p-2">
+              <i className="far fa-bell text-xl"></i>
+            </button>
+            <div className="h-8 w-8 rounded-full bg-slate-200 border border-white overflow-hidden">
+              <img src="https://picsum.photos/32/32" alt="Avatar" />
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content Area */}
+      <main className="max-w-5xl mx-auto px-6 mt-10">
+        <div className="mb-10">
+          <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">Customer Profile</h1>
+          <p className="text-slate-500 mt-2 text-lg">Manage your company information, financial settings, and documents.</p>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="bg-slate-100 p-1.5 rounded-2xl flex flex-wrap gap-1 mb-10 w-fit">
+          {tabs.map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold transition-all duration-200 text-sm ${
+                activeTab === tab 
+                  ? 'bg-white text-blue-600 shadow-md' 
+                  : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/50'
+              }`}
+            >
+              <i className={`fas ${getTabIcon(tab)} text-base`}></i>
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        {/* Form Container */}
+        <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+          <div className="p-8 md:p-12">
+            {activeTab === Tab.CompanyInfo ? (
+              <CompanyInfoForm data={companyData} onChange={handleDataChange} />
+            ) : (
+              <div className="py-20 flex flex-col items-center justify-center text-slate-400 space-y-4">
+                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center border border-slate-100">
+                   <i className={`fas ${getTabIcon(activeTab)} text-3xl`}></i>
+                </div>
+                <h3 className="text-lg font-medium">{activeTab} section coming soon</h3>
+                <p className="text-sm">We are currently building this feature.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Persistent Footer Actions */}
+          <div className="px-8 md:px-12 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+            <button className="px-6 py-2 text-slate-600 font-semibold hover:bg-slate-200 rounded-xl transition-colors">
+              Reset Changes
+            </button>
+            <div className="flex gap-4">
+               <button className="px-6 py-2 border border-slate-200 text-slate-700 font-semibold hover:bg-white rounded-xl transition-all active:scale-95 shadow-sm">
+                Discard
+              </button>
+              <button 
+                onClick={() => alert('Profile saved successfully!')}
+                className="px-10 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all active:scale-95 shadow-lg shadow-blue-200"
+              >
+                Save Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Background decoration */}
+      <div className="fixed top-0 right-0 -z-10 w-[500px] h-[500px] bg-blue-50/50 rounded-full blur-[100px] -mr-64 -mt-64"></div>
+      <div className="fixed bottom-0 left-0 -z-10 w-[500px] h-[500px] bg-slate-100/50 rounded-full blur-[100px] -ml-64 -mb-64"></div>
+    </div>
+  );
+};
+
+export default App;

@@ -1,0 +1,138 @@
+olor Selection: Each color has a dedicated "+" button to add to cart
+Sliding Cart: Left sidebar that slides in with a drag-to-select matrix table
+Bulk Quantity Entry: Drag across size cells and enter one quantity for multiple sizes
+Direct Entry: Click individual size cells to enter quantities
+Key Features
+Add products by color variant (each color is a separate cart item)
+Cart slides in from left as a wide sidebar overlay
+Size matrix table with drag-select functionality
+Input fields in each size cell for direct quantity entry
+Batch quantity entry for selected cells
+Code Files
+
+Show 5 more
+
+Decided on documentation scope
+Here's the complete package with description and all code files:
+
+📦 INTEGRATION PACKAGE
+File 1: ProductCard.tsx
+// client/src/components/ProductCard.tsx
+// Displays a single product with color variants
+// Each color has an add-to-cart button
+// Shows main product image, color thumbnails, price, and available sizes
+
+(See code above - 147 lines)
+
+File 2: ProductGrid.tsx
+// client/src/components/ProductGrid.tsx
+// Renders a grid of ProductCard components
+// Handles the layout and passes cart state to each card
+
+(See code above - 42 lines)
+
+File 3: CartTable.tsx
+// client/src/components/CartTable.tsx
+// Matrix table with products as rows and sizes as columns
+// Features:
+// - Direct quantity input in each cell
+// - Drag-to-select multiple cells
+// - Batch quantity entry
+// - Product checkboxes for selection
+// - Total quantity and price calculation
+
+(See code above - 291 lines)
+
+File 4: CartSidebar.tsx
+// client/src/components/CartSidebar.tsx
+// Left sliding sidebar that contains the CartTable
+// Features:
+// - Slides in from left with backdrop
+// - Full-width (max-w-6xl) to fit table
+// - Close button and click-outside to dismiss
+
+(See code above - 94 lines)
+
+File 5: home.tsx (Main Page)
+// client/src/pages/home.tsx
+// Main page that orchestrates everything
+// State management for cart products
+// Handlers for add/remove/quantity changes
+
+(See code above - 248 lines)
+
+🔧 INTEGRATION INSTRUCTIONS
+1. Data Structure
+Product Format:
+
+{
+  sku: 'JS0375',
+  name: 'Premium Crew Sweatshirt',
+  price: 85.67,
+  originalPrice: 119.90, // optional
+  colors: [
+    { name: 'Black', hex: '#000000', imageUrl: '/path/to/black.png' },
+    { name: 'White', hex: '#FFFFFF', imageUrl: '/path/to/white.png' }
+  ],
+  sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+  availableSizes: {
+    'Black-XS': 5,
+    'Black-S': 10,
+    'White-XS': 7,
+    // ... (color-size keys with stock quantities)
+  }
+}
+
+Cart Product Format:
+
+{
+  id: 'JS0375-Black', // sku-color
+  sku: 'JS0375',
+  name: 'Premium Crew Sweatshirt',
+  color: 'Black',
+  imageUrl: '/path/to/black.png',
+  price: 85.67,
+  sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+  quantities: { 'XS': 0, 'S': 2, 'M': 0, ... }, // size: quantity
+  availableSizes: { 'XS': 5, 'S': 10, ... } // size: stock
+}
+
+2. Dependencies Required
+Install these shadcn/ui components:
+
+npx shadcn@latest add button
+npx shadcn@latest add input
+npx shadcn@latest add checkbox
+npx shadcn@latest add toast
+
+Install lucide-react icons:
+
+npm install lucide-react
+
+3. API Endpoints to Create
+Replace the mock data with these API calls:
+
+GET /api/products - Fetch all products
+POST /api/cart/add - Add product color variant to cart
+
+{ "sku": "JS0375", "color": "Black" }
+
+PATCH /api/cart/:productId/quantity - Update quantity
+
+{ "size": "M", "quantity": 5 }
+
+DELETE /api/cart/:productId - Remove product from cart
+
+4. Quick Start
+Copy all 5 files to your project
+Update image imports in home.tsx with your product images
+Replace mock products array with API call: useQuery({ queryKey: ['/api/products'] })
+Replace cartProducts state with API call: useQuery({ queryKey: ['/api/cart'] })
+Update handlers to use API mutations instead of local state
+5. Key Features to Highlight
+✅ Dual Add Methods: + button on main image AND each color thumbnail
+✅ Sliding Cart: Left sidebar (not modal) with backdrop
+✅ Matrix Table: Products × Sizes grid for bulk entry
+✅ Drag Selection: Click-drag across cells, enter one quantity
+✅ Direct Input: Click individual cells to type quantities
+✅ Color Variants: Each color is a separate cart line item

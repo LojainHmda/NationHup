@@ -1,0 +1,61 @@
+Task: Create a floating mini input popup component in React that matches the following visual style and behavior.
+
+Visual & Dimensions:
+
+Container:
+
+Width: 140px, padding: 4px, border 1px solid #ddd, border-radius 6px
+
+Background: white (#fff), display inline-block, positioned absolutely relative to trigger button, centered with transform: translate(-50%, -50%)
+
+Row 1 (Controls): flex horizontal, gap 2px, full width
+
+"-" button: flex 1, height 20px, font-size 10px, border 1px solid #ccc, border-radius 4px, cursor pointer
+
+Input field: width 30px, height 18px, font-size 10px, text-align center, border 1px solid #ccc, border-radius 4px
+
+"+" button: same style as "-" button
+
+Close "✕" button: width 20px, height 20px, font-size 10px, border 1px solid #fca5a5, border-radius 4px, background #fee2e2, color #b91c1c, cursor pointer
+
+Row 2 (Clipboard actions): flex horizontal, gap 2px, full width
+
+Copy button: flex 1, height 20px, font-size 10px, border 1px solid #ccc, border-radius 4px, cursor pointer
+
+Paste button: same style as Copy button
+
+Behavior / Interaction Requirements:
+
+Popup is initially hidden and appears when a trigger button is clicked.
+
+Close popup when:
+
+User presses ESC
+
+User clicks the ✕ button
+
+User clicks outside the popup area
+
+Increment / Decrement: "+" increases numeric input by 1, "-" decreases by 1
+
+Copy: Copies current input value to clipboard and temporarily shows "Copied!" feedback
+
+Paste: Pastes clipboard content into the input field
+
+Live input: Changes in input field are reflected immediately (no enter key needed)
+
+The component should handle numeric input safely and update the state properly
+
+Expected Outcome:
+
+Popup visually matches the described styling and layout
+
+Numeric input updates immediately as user types
+
+Copy button updates its label to "Copied!" briefly after copying
+
+Paste button correctly inserts clipboard content
+
+Popup closes correctly on ESC, ✕ button, or outside click
+
+Increment and decrement buttons always adjust value correctly

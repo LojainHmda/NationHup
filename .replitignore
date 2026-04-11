@@ -1,0 +1,6 @@
+uploads/
+attached_assets/
+.git/
+node_modules/
+*.log
+tmp/

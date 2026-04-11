@@ -1,0 +1,373 @@
+
+import React, { useState } from 'react';
+import { CompanyData, CURRENCIES, MANAGERS, AccountManager } from '../types';
+import { FileUpload } from './FileUpload';
+import { analyzeCompanyData } from '../services/geminiService';
+
+interface Props {
+  data: CompanyData;
+  onChange: (updates: Partial<CompanyData>) => void;
+}
+
+export const CompanyInfoForm: React.FC<Props> = ({ data, onChange }) => {
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [aiInsight, setAiInsight] = useState<{summary: string, riskScore: number} | null>(null);
+
+  const handleManagerChange = (managerId: string) => {
+    onChange({ assignedManagerId: managerId });
+  };
+
+  const handleAiAssist = async () => {
+    if (!data.legalName) return;
+    setIsAnalyzing(true);
+    const result = await analyzeCompanyData(data.legalName);
+    if (result) {
+      setAiInsight(result);
+    }
+    setIsAnalyzing(false);
+  };
+
+  const handleFileSelect = (type: 'id' | 'store_photo', file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const newDataUrl = reader.result as string;
+      const updatedAttachments = [...data.attachments];
+      const existingIdx = updatedAttachments.findIndex(a => a.type === type);
+      
+      const newAttachment = {
+        name: file.name,
+        type,
+        dataUrl: newDataUrl,
+        uploadDate: new Date().toISOString()
+      };
+
+      if (existingIdx > -1) {
+        updatedAttachments[existingIdx] = newAttachment;
+      } else {
+        updatedAttachments.push(newAttachment);
+      }
+      
+      onChange({ attachments: updatedAttachments });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const getAttachmentUrl = (type: 'id' | 'store_photo') => {
+    return data.attachments.find(a => a.type === type)?.dataUrl;
+  };
+
+  // Multiple input handlers
+  const handlePhoneChange = (index: number, value: string) => {
+    const newPhones = [...data.phones];
+    newPhones[index] = value;
+    onChange({ phones: newPhones });
+  };
+
+  const addPhone = () => {
+    onChange({ phones: [...data.phones, ''] });
+  };
+
+  const removePhone = (index: number) => {
+    const newPhones = data.phones.filter((_, i) => i !== index);
+    onChange({ phones: newPhones });
+  };
+
+  const handleEmailChange = (index: number, value: string) => {
+    const newEmails = [...data.emails];
+    newEmails[index] = value;
+    onChange({ emails: newEmails });
+  };
+
+  const addEmail = () => {
+    onChange({ emails: [...data.emails, ''] });
+  };
+
+  const removeEmail = (index: number) => {
+    const newEmails = data.emails.filter((_, i) => i !== index);
+    onChange({ emails: newEmails });
+  };
+
+  const currentManager = MANAGERS.find(m => m.id === data.assignedManagerId);
+
+  return (
+    <div className="space-y-8 animate-fadeIn">
+      {/* Header Info */}
+      <div>
+        <h2 className="text-2xl font-bold text-slate-800">Company Information</h2>
+        <p className="text-slate-500 text-sm mt-1">Manage core business details and compliance documentation</p>
+      </div>
+
+      {/* Main Form Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Left Column */}
+        <div className="space-y-6">
+          {/* Legal Name */}
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-slate-700">Legal Name</label>
+            <div className="relative">
+              <input 
+                type="text" 
+                value={data.legalName}
+                onChange={(e) => onChange({ legalName: e.target.value })}
+                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                placeholder="e.g. ABC Corporation Ltd."
+              />
+              <button 
+                onClick={handleAiAssist}
+                disabled={isAnalyzing || !data.legalName}
+                className="absolute right-2 top-1.5 p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors disabled:opacity-50"
+                title="AI Insight"
+              >
+                <i className={`fas fa-wand-magic-sparkles ${isAnalyzing ? 'animate-pulse' : ''}`}></i>
+              </button>
+            </div>
+          </div>
+
+          {/* Business Owner */}
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-slate-700">Business Owner</label>
+            <input 
+              type="text" 
+              value={data.businessOwner}
+              onChange={(e) => onChange({ businessOwner: e.target.value })}
+              className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+              placeholder="Full name of the owner"
+            />
+          </div>
+
+          {/* Multiple Phone Numbers */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700 flex justify-between items-center">
+              Phone Numbers
+              <button 
+                type="button"
+                onClick={addPhone}
+                className="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1"
+              >
+                <i className="fas fa-plus"></i> Add Another
+              </button>
+            </label>
+            <div className="space-y-2">
+              {data.phones.map((phone, idx) => (
+                <div key={idx} className="flex gap-2">
+                  <input 
+                    type="tel" 
+                    value={phone}
+                    onChange={(e) => handlePhoneChange(idx, e.target.value)}
+                    className="flex-1 px-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                    placeholder="+1 (555) 000-0000"
+                  />
+                  {data.phones.length > 1 && (
+                    <button 
+                      onClick={() => removePhone(idx)}
+                      className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <i className="fas fa-trash-alt"></i>
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Multiple Emails */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700 flex justify-between items-center">
+              Email Addresses
+              <button 
+                type="button"
+                onClick={addEmail}
+                className="text-xs text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1"
+              >
+                <i className="fas fa-plus"></i> Add Another
+              </button>
+            </label>
+            <div className="space-y-2">
+              {data.emails.map((email, idx) => (
+                <div key={idx} className="flex gap-2">
+                  <input 
+                    type="email" 
+                    value={email}
+                    onChange={(e) => handleEmailChange(idx, e.target.value)}
+                    className="flex-1 px-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                    placeholder="example@domain.com"
+                  />
+                  {data.emails.length > 1 && (
+                    <button 
+                      onClick={() => removeEmail(idx)}
+                      className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <i className="fas fa-trash-alt"></i>
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column */}
+        <div className="space-y-6">
+          {/* Trading Name */}
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-slate-700">Trading Name</label>
+            <input 
+              type="text" 
+              value={data.tradingName}
+              onChange={(e) => onChange({ tradingName: e.target.value })}
+              className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+              placeholder="e.g. ABC Shoes"
+            />
+          </div>
+
+          {/* License Trade Number */}
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-slate-700">License Trade Number</label>
+            <input 
+              type="text" 
+              value={data.licenseTradeNumber}
+              onChange={(e) => onChange({ licenseTradeNumber: e.target.value })}
+              className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+              placeholder="e.g. LIC-98234-X"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {/* Status */}
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-slate-700">Status</label>
+              <select 
+                value={data.status}
+                onChange={(e) => onChange({ status: e.target.value as any })}
+                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all appearance-none cursor-pointer"
+              >
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+                <option value="Pending">Pending</option>
+              </select>
+            </div>
+
+            {/* Currency */}
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-slate-700">Default Currency</label>
+              <select 
+                value={data.currency}
+                onChange={(e) => onChange({ currency: e.target.value })}
+                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all appearance-none cursor-pointer"
+              >
+                {CURRENCIES.map(curr => (
+                  <option key={curr.code} value={curr.code}>
+                    {curr.code} ({curr.symbol})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Tax/VAT Number */}
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-slate-700">Tax/VAT Number</label>
+            <input 
+              type="text" 
+              value={data.taxNumber}
+              onChange={(e) => onChange({ taxNumber: e.target.value })}
+              className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+              placeholder="GB123456789"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Account Manager Section */}
+      <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-slate-800">Assigned Account Manager</h3>
+          <i className="fas fa-user-tie text-blue-500"></i>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-slate-700">Select Manager</label>
+            <select 
+              value={data.assignedManagerId || ''}
+              onChange={(e) => handleManagerChange(e.target.value)}
+              className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all appearance-none cursor-pointer"
+            >
+              <option value="">Unassigned</option>
+              {MANAGERS.map(m => (
+                <option key={m.id} value={m.id}>{m.name}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="flex flex-col justify-center">
+            {currentManager ? (
+              <div className="bg-white p-3 rounded-xl border border-blue-100 shadow-sm flex items-center gap-4">
+                <div className="h-10 w-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                  {currentManager.name.charAt(0)}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-slate-900">{currentManager.name}</p>
+                  <div className="flex gap-4 mt-1">
+                    <span className="text-xs text-slate-500">
+                      <i className="fas fa-phone mr-1"></i> {currentManager.phone}
+                    </span>
+                    {currentManager.email && (
+                      <span className="text-xs text-slate-500">
+                        <i className="fas fa-envelope mr-1"></i> {currentManager.email}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-400 italic">No manager assigned yet</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Attachments Section */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-slate-800">Compliance & Media</h3>
+          <span className="text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full uppercase font-bold tracking-wider">Required</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <FileUpload 
+            label="ID Document (Owner/License)" 
+            icon="fa-id-card" 
+            accept="image/*,.pdf"
+            onFileSelect={(f) => handleFileSelect('id', f)}
+            currentFile={getAttachmentUrl('id')}
+          />
+          <FileUpload 
+            label="Store Front Photo" 
+            icon="fa-store" 
+            accept="image/*"
+            onFileSelect={(f) => handleFileSelect('store_photo', f)}
+            currentFile={getAttachmentUrl('store_photo')}
+          />
+        </div>
+      </div>
+
+      {/* AI Insight Box */}
+      {aiInsight && (
+        <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl animate-slideUp">
+          <div className="flex items-center gap-2 mb-2 text-blue-700">
+            <i className="fas fa-robot"></i>
+            <span className="font-semibold text-sm">Gemini AI Assistant Insight</span>
+          </div>
+          <p className="text-sm text-blue-900/80 leading-relaxed mb-3">{aiInsight.summary}</p>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-blue-600">Risk Score:</span>
+              <div className="w-24 h-2 bg-blue-200 rounded-full overflow-hidden">
+                <div className={`h-full ${aiInsight.riskScore < 30 ? 'bg-green-500' : aiInsight.riskScore < 70 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${aiInsight.riskScore}%` }}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

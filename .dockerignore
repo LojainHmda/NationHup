@@ -1,0 +1,42 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Build output (rebuilt in container)
+dist
+
+# Git
+.git
+.gitignore
+
+# IDE and editor
+.vscode
+.idea
+*.swp
+*.swo
+
+# Env files (secrets passed at deploy time)
+.env
+.env.*
+!.env.example
+
+# Logs and temp
+*.log
+npm-debug.log*
+uploads/*
+!uploads/.gitkeep
+
+# Test and coverage
+coverage
+.nyc_output
+*.test.ts
+*.spec.ts
+__tests__
+
+# Misc
+.DS_Store
+*.md
+!README.md
+.replit
+replit.nix

@@ -1,0 +1,104 @@
+We currently use a sidebar-based cart system where carts appear as a list/cards in a sidebar. Each cart represents a separate grouping of products.
+
+1. Cart Creation
+
+There is a “New Cart” button.
+
+When clicking New Cart, the user must first choose the Cart Type:
+
+Pre-Order Cart
+
+Stock Cart
+
+Under the “New Cart” button, there must be two tabs:
+
+Pre-Order
+
+Stock
+(Same UI and design, only logic differs)
+
+Each new cart is created with a fixed type that cannot change later.
+
+2. Active Cart Logic
+
+At any time, only ONE cart can be active (open).
+
+When the user opens a cart:
+
+All other carts must automatically collapse/close.
+
+The active cart is the only cart allowed to receive products.
+
+3. Adding Products
+
+When adding a product:
+
+The product must be added only to the currently active cart.
+
+If no cart is active → block the action and ask the user to open a cart first.
+
+4. Cart Type Enforcement (Critical Rule)
+
+Pre-Order Cart
+
+Accepts Pre-Order products only
+
+Must reject Stock products
+
+Stock Cart
+
+Accepts Stock products only
+
+Must reject Pre-Order products
+
+If the user tries to add:
+
+a Stock product to a Pre-Order cart
+
+or a Pre-Order product to a Stock cart
+
+➡️ The system must prevent the action and show a clear message (no silent failure).
+
+5. Multiple Carts Scenario
+
+Example:
+
+User has Cart A (Pre-Order) and Cart B (Stock)
+
+User opens Cart A
+
+Cart B closes automatically
+
+While Cart A is active:
+
+Only Pre-Order products can be added
+
+Stock products must be blocked
+
+Switching to Cart B reverses the logic accordingly
+
+6. UX Expectations
+
+Visually highlight the active cart
+
+Make it obvious which cart is currently receiving products
+
+Prevent confusion by:
+
+Auto-closing inactive carts
+
+Blocking invalid product additions
+
+Summary (Implementation Checklist)
+
+✅ One active cart only
+
+✅ Cart type chosen at creation and locked
+
+✅ Products go only to the active cart
+
+✅ Strict type validation (Pre-Order vs Stock)
+
+✅ Auto-collapse inactive carts
+
+✅ Clear feedback on invalid actions
