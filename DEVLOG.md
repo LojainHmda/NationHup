@@ -219,3 +219,15 @@ Chronological record of code changes. Updated after every substantive code chang
 **Reason:** User requested rename.
 
 ---
+
+### [SEQ-019] 2026-04-12 12:00
+
+**Files:** `.gitignore`, `.env.example`, `server_output.txt`, `startup.log`, `DEVLOG.md`
+
+**Action:** Harden secret hygiene before GitHub push
+
+**Details:** Added `.env.example` with placeholder-only variables (no real secrets). Expanded `.gitignore` for PEM/credential JSON patterns and ensured local logs stay untracked. Removed `server_output.txt` and `startup.log` from version control (files remain locally ignored). Sanitized local `.env.clean` template to placeholders so copies cannot leak DB or cloud keys.
+
+**Reason:** GitHub secret scanning flagged Google Cloud–related material in a prior push; keep credentials in env/secret stores only and avoid committing logs or key files.
+
+---

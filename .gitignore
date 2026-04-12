@@ -4,6 +4,18 @@ dist
 .env
 .env.*
 !.env.example
+
+# Google Cloud / credential material (never commit)
+*.pem
+*-credentials.json
+*-service-account*.json
+application_default_credentials.json
+gcloud-application-credentials.json
+**/google-credentials*.json
+
+# Local dev logs (may contain tokens or PII)
+server_output.txt
+startup.log
 debug.log
 .DS_Store
 server/public
