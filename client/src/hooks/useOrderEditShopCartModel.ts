@@ -199,12 +199,14 @@ export function useOrderEditShopCartModel(
     ) {
       return "Kids - Newborn";
     }
+    if (ageGroup === "KIDS") return "Kids - Junior";
+    if (ageGroup === "INFANT") return "Kids - Newborn";
     if (g.includes("JUNIOR")) return "Kids - Junior";
     if (g.includes("LARGE") && g.includes("KIDS")) return "Kids - Large";
     if (g.includes("NEWBORN") || g.includes("NEW BORN")) return "Kids - Newborn";
 
-    if (main === "MEN") return "Men";
-    if (main === "WOMEN") return "Women";
+    if (main === "MEN" || main === "MALE") return "Men";
+    if (main === "WOMEN" || main === "FEMALE") return "Women";
     if (main === "ADULT UNISEX") return "Adult Unisex";
     if (main === "KIDS") return "Kids - Junior";
 

@@ -231,3 +231,99 @@ Chronological record of code changes. Updated after every substantive code chang
 **Reason:** GitHub secret scanning flagged Google Cloud–related material in a prior push; keep credentials in env/secret stores only and avoid committing logs or key files.
 
 ---
+
+### [SEQ-020] 2026-04-15 14:35
+
+**Files:** `client/src/pages/admin-users.tsx`, `DEVLOG.md`
+
+**Action:** Remove per-row delete (trash) control on Admin Users table
+
+**Details:** Deleted the ghost `Button` that wrapped `Trash2` and opened the delete confirmation dialog from each customer row; edit and reset-password actions unchanged. Delete confirmation UI remains in the file for any other entry points if added later.
+
+**Reason:** User requested removal of the trash icon button only.
+
+---
+
+### [SEQ-021] 2026-04-15 15:10
+
+**Files:** `client/src/pages/cart.tsx`, `client/src/hooks/useOrderEditShopCartModel.ts`, `DEVLOG.md`
+
+**Action:** Stabilize cart section grouping for kids products
+
+**Details:** `getDisplayCategory` now treats `kidsAgeGroup` values **`KIDS`** (schema layer) and **`Infant`** (filter label) as kids before falling through to Women/Men, and maps **`mainCategory` `Male`/`Female`** to the same Men/Women buckets as `MEN`/`WOMEN` so rows are not classified only via `gender` when age metadata was present but previously unmatched.
+
+**Reason:** Kids lines sometimes appeared under Women because `KIDS`/`Infant` were not handled and `Female` main category was not aligned with the Women branch.
+
+---
+
+### [SEQ-022] 2026-04-15 15:45
+
+**Files:** `client/src/pages/cart.tsx`, `DEVLOG.md`
+
+**Action:** Match cart page footer background to shop cart sidebar
+
+**Details:** Cart footer `className` `bg-white` replaced with `bg-[#DDE3E2]` (same token as `ShopCartSidebar` / layout rail).
+
+**Reason:** User requested footer use the sidebar gray background.
+
+---
+
+### [SEQ-023] 2026-04-15 16:00
+
+**Files:** `client/src/pages/cart.tsx`, `DEVLOG.md`
+
+**Action:** Submit Cart hover uses theme primary
+
+**Details:** For `data-testid="button-submit-cart"` only, `hover:bg-[#e06a10]` replaced with `hover:bg-primary`; default orange fill unchanged.
+
+**Reason:** User requested hover state use primary color.
+
+---
+
+### [SEQ-024] 2026-04-15 16:20
+
+**Files:** `client/src/pages/cart.tsx`, `DEVLOG.md`
+
+**Action:** Cart header actions use default primary `Button` styling
+
+**Details:** **Back to Shop** no longer uses `variant="ghost"` with orange hover; **Empty Cart** no longer uses `variant="destructive"`; **Submit Cart** drops custom orange classes. All three rely on the shared `Button` default variant (`bg-primary`, `text-primary-foreground`, `hover:bg-primary/90`) plus existing layout classes.
+
+**Reason:** User requested Back, Empty, and Submit use primary theme color.
+
+---
+
+### [SEQ-025] 2026-04-15 16:35
+
+**Files:** `client/src/components/shop/ShopCartTable.tsx`, `DEVLOG.md`
+
+**Action:** Cart row delete icon hover uses primary background
+
+**Details:** Per-row trash `Button` (`button-delete-*`) adds `hover:bg-primary` so hover overrides ghost `hover:bg-accent`; `hover:text-red-600` / dark red hover unchanged.
+
+**Reason:** User asked for primary hover background only, not text/icon color changes.
+
+---
+
+### [SEQ-026] 2026-04-15 16:50
+
+**Files:** `client/src/pages/order-history.tsx`, `DEVLOG.md`
+
+**Action:** Order card "View Details" ghost button uses primary hover fill
+
+**Details:** Replaced `hover:text-primary/90` with `hover:bg-primary hover:text-primary-foreground` on the ghost `Button` so hover matches primary CTA styling instead of default accent.
+
+**Reason:** User requested same primary hover treatment as other actions.
+
+---
+
+### [SEQ-027] 2026-04-15 17:10
+
+**Files:** `client/src/pages/order-history.tsx`, `DEVLOG.md`
+
+**Action:** Order detail dialog hides line-item product lists
+
+**Details:** Removed the **Order Items** (brand-grouped products with thumbnails) and **Items removed by our team** sections from the selected-order `Dialog`. Kept summary grid (Order ID, Date, Type, item count), rejection notice when applicable, Account Manager creation banner, and Subtotal/Discount/Total block. Removed unused helpers: `StaffRemovedLine`, `lineItemImageUrl`, `LineItemThumbnail`, `staffRemovalRoleLabel`.
+
+**Reason:** User asked not to show product lines in the popup—only summary, AM note, and totals.
+
+---

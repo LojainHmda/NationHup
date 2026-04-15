@@ -107,63 +107,6 @@ const getStatusInfo = (status: OrderStatus) => {
   return ORDER_STATUSES.find(s => s.value === status) || ORDER_STATUSES[1];
 };
 
-type StaffRemovedLine = {
-  productId: string;
-  productName: string;
-  sku: string;
-  brand: string;
-  size: string;
-  quantityRemoved: number;
-  unitPrice: number;
-  totalPriceRemoved: number;
-  removedByRole: string;
-  removedByName: string | null;
-  removedAt: string;
-};
-
-function lineItemImageUrl(item: { productId: string } & Record<string, unknown>): string {
-  const u = (item as { imageUrl?: string; image1?: string }).imageUrl || (item as { image1?: string }).image1;
-  return typeof u === "string" && u.trim() ? u.trim() : "";
-}
-
-function LineItemThumbnail({ url }: { url: string }) {
-  const [failed, setFailed] = useState(!url);
-  if (failed) {
-    return (
-      <div className="w-10 h-10 shrink-0 rounded-md border border-border bg-muted flex items-center justify-center">
-        <Package className="w-4 h-4 text-muted-foreground" />
-      </div>
-    );
-  }
-  return (
-    <div className="w-10 h-10 shrink-0 rounded-md border border-border bg-muted overflow-hidden flex items-center justify-center p-0.5">
-      <img
-        src={url}
-        alt=""
-        className="max-w-full max-h-full w-auto h-auto object-contain"
-        onError={() => setFailed(true)}
-      />
-    </div>
-  );
-}
-
-function staffRemovalRoleLabel(role: string): string {
-  switch (role) {
-    case 'account_manager':
-      return 'Account Manager';
-    case 'sales':
-      return 'Sales';
-    case 'finance':
-      return 'Finance';
-    case 'admin':
-      return 'Admin';
-    case 'warehouse':
-      return 'Warehouse';
-    default:
-      return role.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-  }
-}
-
 export default function OrderHistory() {
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
@@ -330,7 +273,7 @@ export default function OrderHistory() {
             <Button 
               variant="ghost" 
               size="sm"
-              className="h-7 text-xs text-primary hover:text-primary/90 px-2"
+              className="h-7 text-xs text-primary hover:bg-primary hover:text-primary-foreground px-2"
               onClick={(e) => {
                 e.stopPropagation();
                 setLocation(`/cart/${order.id}?from=order-history`);
@@ -577,118 +520,6 @@ export default function OrderHistory() {
                     </div>
                   </div>
                 )}
-
-                <div>
-                  <h3 className="font-semibold text-sm mb-2">Order Items</h3>
-                  <div className="space-y-2">
-                    {(() => {
-                      const itemsByBrand = new Map<string, typeof selectedOrder.items>();
-                      selectedOrder.items.forEach(item => {
-                        const brandName = item.brand || 'Unknown Brand';
-                        if (!itemsByBrand.has(brandName)) {
-                          itemsByBrand.set(brandName, []);
-                        }
-                        itemsByBrand.get(brandName)!.push(item);
-                      });
-                      
-                      return Array.from(itemsByBrand.entries()).map(([brandName, items]) => {
-                        const brandSubtotal = items.reduce((sum, item) => {
-                          return sum + parseFloat(item.totalPrice.toString());
-                        }, 0);
-                        
-                        return (
-                          <div key={brandName} className="bg-muted/30 rounded-lg p-2.5 space-y-1.5">
-                            <div className="flex justify-between items-center border-b border-border pb-1.5">
-                              <span className="font-medium text-foreground text-sm">{brandName}</span>
-                              <span className="text-[11px] text-muted-foreground">({items.length} items)</span>
-                            </div>
-                            <div className="divide-y divide-border/60">
-                              {items.map((item, idx) => (
-                                <div key={idx} className="flex gap-2 items-start py-1.5 first:pt-0 last:pb-0">
-                                  <LineItemThumbnail url={lineItemImageUrl(item as { productId: string } & Record<string, unknown>)} />
-                                  <div className="flex-1 min-w-0 flex justify-between items-start gap-2 text-xs">
-                                    <div className="min-w-0 text-muted-foreground">
-                                      <div className="font-medium text-foreground leading-tight line-clamp-2">{item.productName}</div>
-                                      <div className="text-[11px] mt-0.5 leading-tight">
-                                        {(item as any).color && `${(item as any).color} / `}Size {item.size} × {item.quantity}
-                                      </div>
-                                    </div>
-                                    <div className="text-right shrink-0">
-                                      <div className="font-medium text-foreground tabular-nums">
-                                        ${parseFloat(item.totalPrice.toString()).toFixed(2)}
-                                      </div>
-                                      <div className="text-[11px] text-muted-foreground tabular-nums">
-                                        @${parseFloat(item.unitPrice.toString()).toFixed(2)}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                            <div className="flex justify-between text-xs font-medium text-foreground pt-1.5 border-t border-border">
-                              <span>{brandName} Subtotal</span>
-                              <span className="tabular-nums">${brandSubtotal.toFixed(2)}</span>
-                            </div>
-                          </div>
-                        );
-                      });
-                    })()}
-                  </div>
-                </div>
-
-                {Array.isArray((selectedOrder as any).itemsRemovedByStaff) &&
-                  (selectedOrder as any).itemsRemovedByStaff.length > 0 && (
-                    <div>
-                      <h3 className="font-semibold text-sm mb-1.5 text-[hsl(var(--warning))]">
-                        Items removed by our team
-                      </h3>
-                      <p className="text-[11px] text-muted-foreground mb-2 leading-snug">
-                        The following lines were removed or reduced while your order was being
-                        reviewed.
-                      </p>
-                      <div className="space-y-1.5">
-                        {((selectedOrder as any).itemsRemovedByStaff as StaffRemovedLine[]).map(
-                          (r, idx) => (
-                            <div
-                              key={`${r.productId}-${r.size}-${r.removedAt}-${idx}`}
-                              className="flex justify-between items-start gap-2 text-xs rounded-md border border-[hsl(var(--warning)/0.45)] bg-[hsl(var(--warning)/0.08)] p-2"
-                              data-testid={`removed-line-${idx}`}
-                            >
-                              <div className="flex-1 min-w-0">
-                                <div className="font-medium text-foreground line-through decoration-foreground/50 leading-tight">
-                                  {r.productName}
-                                </div>
-                                <div className="text-[11px] text-muted-foreground mt-0.5">
-                                  {r.brand ? `${r.brand} · ` : ''}
-                                  Size {r.size} × {r.quantityRemoved}
-                                </div>
-                                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                                  <Badge
-                                    variant="outline"
-                                    className="text-[10px] py-0 px-1.5 border-[hsl(var(--warning)/0.5)] bg-card"
-                                  >
-                                    Removed by {staffRemovalRoleLabel(r.removedByRole)}
-                                    {r.removedByName ? ` · ${r.removedByName}` : ''}
-                                  </Badge>
-                                  <span className="text-[10px] text-muted-foreground tabular-nums">
-                                    {new Date(r.removedAt).toLocaleString()}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="text-right shrink-0">
-                                <div className="font-medium text-muted-foreground line-through">
-                                  ${Number(r.totalPriceRemoved).toFixed(2)}
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  @${Number(r.unitPrice).toFixed(2)}
-                                </div>
-                              </div>
-                            </div>
-                          ),
-                        )}
-                      </div>
-                    </div>
-                  )}
 
                 <div className="border-t pt-3 space-y-1.5">
                   <div className="flex justify-between text-xs">

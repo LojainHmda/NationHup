@@ -1098,7 +1098,7 @@ export function ShopCartTable({
                                 e.stopPropagation();
                                 setProductToDelete({ id: product.id, name: product.name });
                               }} 
-                              className="h-8 w-8 hover:text-red-600 dark:hover:text-red-500 transition-colors" 
+                              className="h-8 w-8 hover:bg-primary hover:text-red-600 dark:hover:text-red-500 transition-colors" 
                               data-testid={`button-delete-${product.id}`}
                             >
                               <Trash2 className="w-4 h-4" />

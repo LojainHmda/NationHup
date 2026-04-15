@@ -990,18 +990,6 @@ export default function AdminUsersPage() {
                             >
                               <KeyRound className="h-3 w-3" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setDeleteDialogOpen(true);
-                              }}
-                              data-testid={`button-delete-${user.id}`}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>

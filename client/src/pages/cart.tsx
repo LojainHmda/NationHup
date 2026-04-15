@@ -895,14 +895,17 @@ export default function CartPage() {
     if (ageGroup === 'LARGE' || ageGroup === 'KIDS - LARGE') return 'Kids - Large';
     if (ageGroup === 'JUNIOR' || ageGroup === 'KIDS - JUNIOR') return 'Kids - Junior';
     if (ageGroup === 'NEW BORN' || ageGroup === 'NEWBORN' || ageGroup === 'KIDS - NEWBORN') return 'Kids - Newborn';
+    // Shared schema / shop filters: standalone "KIDS" layer, "Infant" (not matched above)
+    if (ageGroup === 'KIDS') return 'Kids - Junior';
+    if (ageGroup === 'INFANT') return 'Kids - Newborn';
     // Gender containing Junior/Large/Newborn indicates Kids (e.g. "Unisex Junior")
     if (g.includes('JUNIOR')) return 'Kids - Junior';
     if (g.includes('LARGE') && g.includes('KIDS')) return 'Kids - Large';
     if (g.includes('NEWBORN') || g.includes('NEW BORN')) return 'Kids - Newborn';
     
-    // Main categories: Men, Women, Adult Unisex
-    if (main === 'MEN') return 'Men';
-    if (main === 'WOMEN') return 'Women';
+    // Main categories: Men, Women, Adult Unisex (include Male/Female from shop filters)
+    if (main === 'MEN' || main === 'MALE') return 'Men';
+    if (main === 'WOMEN' || main === 'FEMALE') return 'Women';
     if (main === 'ADULT UNISEX') return 'Adult Unisex';
     
     // Kids (mainCategory) with age groups
@@ -1124,10 +1127,9 @@ export default function CartPage() {
     <div className="flex flex-col h-full bg-white">
       <div className="flex items-center justify-between p-4 pb-2">
         <Button
-          variant="ghost"
           size="sm"
           onClick={handleBackToShop}
-          className="flex items-center gap-2 hover:bg-[#f97a1f] hover:text-white"
+          className="flex items-center gap-2"
         >
           <ArrowLeft className="w-4 h-4" />{" "}
           {fromOrderHistory ? "Back to Order History" : "Back to Shop"}
@@ -1147,7 +1149,6 @@ export default function CartPage() {
           {!isSubmitted && hasProducts && (
             <>
               <Button
-                variant="destructive"
                 size="sm"
                 onClick={handleEmptyCart}
                 className="flex items-center gap-1"
@@ -1171,7 +1172,7 @@ export default function CartPage() {
                 <Button
                   size="sm"
                   onClick={handleSubmitCart}
-                  className="flex items-center gap-1 bg-[#f97a1f] hover:bg-[#e06a10]"
+                  className="flex items-center gap-1"
                   disabled={submitCartMutation.isPending}
                   data-testid="button-submit-cart"
                 >
@@ -1266,7 +1267,7 @@ export default function CartPage() {
           </div>
         )}
       </div>
-      <footer className="flex justify-center items-center p-4 border-t-2 border-black bg-white gap-4 mt-auto">
+      <footer className="flex justify-center items-center p-4 border-t-2 border-black bg-[#DDE3E2] gap-4 mt-auto">
         <div className="text-sm font-semibold">
           Total Items: <span>{totalItems}</span>
         </div>
