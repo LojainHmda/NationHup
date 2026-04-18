@@ -52,6 +52,7 @@ import type { Order, Product, Brand } from '@shared/schema';
 import { ShopCartTable } from '@/components/shop/ShopCartTable';
 import { useOrderEditShopCartModel } from '@/hooks/useOrderEditShopCartModel';
 import { useCurrency } from '@/contexts/CurrencyContext';
+import * as XLSX from 'xlsx';
 
 const ROLE_DISPLAY_NAMES: Record<string, string> = {
   admin: 'Administrator',
@@ -423,6 +424,7 @@ export function OrdersDashboard({ role = 'account_manager' }: { role?: OrdersDas
   const [rejectReason, setRejectReason] = useState<string>('');
   
   // Order editing state
+  const [isViewOnlyOrder, setIsViewOnlyOrder] = useState(false);
   const [isEditingOrder, setIsEditingOrder] = useState(false);
   const [editedItems, setEditedItems] = useState<OrderFlowOrder['rawItems']>([]);
   const [showAddItemDialog, setShowAddItemDialog] = useState(false);
@@ -1541,6 +1543,60 @@ export function OrdersDashboard({ role = 'account_manager' }: { role?: OrdersDas
     setShowRejectDialog(true);
   };
 
+  const handleExportOrderExcel = (order: OrderFlowOrder) => {
+    const exportRows = order.rawItems.map((item, index) => ({
+      'Line No': index + 1,
+      'Order ID': order.id,
+      Customer: order.customerName,
+      Brand: item.brand || order.brand || '',
+      SKU: item.sku,
+      'Product Name': item.productName,
+      Color: item.color || '',
+      Size: item.size,
+      Quantity: item.quantity,
+      'Unit Price': item.unitPrice,
+      'Line Total': item.totalPrice,
+      Date: order.date,
+    }));
+
+    if (exportRows.length === 0) {
+      toast({
+        title: 'No items to export',
+        description: 'This order does not contain any items.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet(exportRows);
+    worksheet['!cols'] = [
+      { wch: 8 },
+      { wch: 22 },
+      { wch: 20 },
+      { wch: 14 },
+      { wch: 16 },
+      { wch: 30 },
+      { wch: 14 },
+      { wch: 10 },
+      { wch: 10 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 14 },
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Order');
+
+    const orderSuffix = order.id.slice(-6).toUpperCase();
+    const fileName = `order_${orderSuffix}_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+
+    toast({
+      title: 'Excel exported',
+      description: `Order #${orderSuffix} exported to ${fileName}`,
+    });
+  };
+
   const handleConfirmReject = () => {
     if (!rejectOrderId) return;
     rejectMutation.mutate({ orderId: rejectOrderId, reason: rejectReason });
@@ -1813,66 +1869,48 @@ export function OrdersDashboard({ role = 'account_manager' }: { role?: OrdersDas
                           <div className="flex items-center justify-center gap-1 flex-wrap">
                             <button
                               type="button"
-                              onClick={() => setSelectedOrder(order)}
+                              onClick={() => {
+                                setIsViewOnlyOrder(true);
+                                setIsEditingOrder(true);
+                                setEditedItems([...order.rawItems]);
+                                setEditingDetails(false);
+                                setSelectedOrder(order);
+                              }}
                               className="px-2 py-0.5 text-[11px] h-7 text-black border border-slate-300 rounded-md hover:bg-slate-100 hover:border-slate-400 transition-colors"
                               title="Review Order"
                               data-testid={`button-review-${order.id}`}
                             >
                               View
                             </button>
+                            <button
+                              type="button"
+                              onClick={() => handleExportOrderExcel(order)}
+                              className="px-2 py-0.5 text-[11px] h-7 text-black border border-slate-300 rounded-md hover:bg-slate-100 hover:border-slate-400 transition-colors"
+                              title="Export Order to Excel"
+                              data-testid={`button-excel-${order.id}`}
+                            >
+                              Excel
+                            </button>
                             {config.myApprovalStages.includes(order.workflowStage) &&
-                              order.orderStatus !== 'draft' && (
-                              <>
-                                {role === 'account_manager' ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleOpenApprovalForm(order.id)}
-                                    className="px-2 py-0.5 text-[11px] h-7 text-black border border-slate-300 rounded-md hover:bg-slate-100 hover:border-slate-400 transition-colors"
-                                    title="Approve Order"
-                                    data-testid={`button-approve-${order.id}`}
-                                  >
-                                    Approve
-                                  </button>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleSalesApprove(order.id)}
-                                    disabled={salesApproveMutation.isPending}
-                                    className="px-2 py-0.5 text-[11px] h-7 text-black border border-slate-300 rounded-md hover:bg-slate-100 hover:border-slate-400 transition-colors disabled:opacity-50"
-                                    title="Approve Order"
-                                    data-testid={`button-approve-${order.id}`}
-                                  >
-                                    Approve
-                                  </button>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenRejectDialog(order.id)}
-                                  className="px-2 py-0.5 text-[11px] h-7 text-black border border-slate-300 rounded-md hover:bg-slate-100 hover:border-slate-400 transition-colors"
-                                  title="Reject Order"
-                                  data-testid={`button-reject-${order.id}`}
-                                >
-                                  Reject
-                                </button>
-                                {config.showItemEdit &&
-                                  (user?.role === 'account_manager' ||
-                                    user?.role === 'admin' ||
-                                    user?.role === 'sales') && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setSelectedOrder(order);
-                                      setIsEditingOrder(true);
-                                      setEditedItems([...order.rawItems]);
-                                    }}
-                                    className="px-2 py-0.5 text-[11px] h-7 text-black border border-slate-300 rounded-md hover:bg-slate-100 hover:border-slate-400 transition-colors"
-                                    title="Edit Order"
-                                    data-testid={`button-edit-${order.id}`}
-                                  >
-                                    Edit
-                                  </button>
-                                )}
-                              </>
+                              order.orderStatus !== 'draft' &&
+                              config.showItemEdit &&
+                              (user?.role === 'account_manager' ||
+                                user?.role === 'admin' ||
+                                user?.role === 'sales') && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setIsViewOnlyOrder(false);
+                                  setSelectedOrder(order);
+                                  setIsEditingOrder(true);
+                                  setEditedItems([...order.rawItems]);
+                                }}
+                                className="px-2 py-0.5 text-[11px] h-7 text-black border border-slate-300 rounded-md hover:bg-slate-100 hover:border-slate-400 transition-colors"
+                                title="Edit Order"
+                                data-testid={`button-edit-${order.id}`}
+                              >
+                                Edit
+                              </button>
                             )}
                           </div>
                         </td>
@@ -1886,7 +1924,7 @@ export function OrdersDashboard({ role = 'account_manager' }: { role?: OrdersDas
         </Card>
       </main>
 
-      <Dialog open={!!selectedOrder} onOpenChange={() => {setSelectedOrder(null); setIsEditingOrder(false); setEditedItems([]); setEditingDetails(false);}}>
+      <Dialog open={!!selectedOrder} onOpenChange={() => {setSelectedOrder(null); setIsViewOnlyOrder(false); setIsEditingOrder(false); setEditedItems([]); setEditingDetails(false);}}>
         <DialogContent className="fixed inset-4 max-w-none w-auto max-h-none h-auto p-0 overflow-hidden flex flex-col bg-white rounded-xl shadow-xl border border-slate-200 translate-x-0 translate-y-0" aria-describedby="order-review-description">
           <DialogTitle className="sr-only">Order Review</DialogTitle>
           <DialogDescription id="order-review-description" className="sr-only">
@@ -1909,6 +1947,15 @@ export function OrdersDashboard({ role = 'account_manager' }: { role?: OrdersDas
                       ) : null}
                       <span className="flex items-center gap-1"><Package size={12} />{selectedOrder.rawItems.reduce((sum, i) => sum + i.quantity, 0)} units</span>
                       <span className="flex items-center gap-1">${selectedOrder.total.toFixed(2)}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleExportOrderExcel(selectedOrder)}
+                        className="px-2 py-0.5 text-[11px] h-7 text-emerald-700 border border-emerald-300 bg-emerald-50 rounded-md hover:bg-emerald-100 hover:border-emerald-400 transition-colors"
+                        title="Export Order to Excel"
+                        data-testid={`button-modal-excel-${selectedOrder.id}`}
+                      >
+                        Excel
+                      </button>
                       {selectedOrder.brand !== 'Others' && <span>• {selectedOrder.brand}</span>}
                     </div>
                   </div>
@@ -1922,7 +1969,7 @@ export function OrdersDashboard({ role = 'account_manager' }: { role?: OrdersDas
               
               <div className="flex-1 overflow-y-auto p-2 bg-gray-50">
                 {/* Sales: Editable Approval Details */}
-                {role === 'sales' && selectedOrder.workflowStage === 'sales_approval' && (
+                {!isViewOnlyOrder && role === 'sales' && selectedOrder.workflowStage === 'sales_approval' && (
                   <div className="bg-white border border-slate-200 rounded-xl p-3 mb-2">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="font-semibold text-slate-700 text-xs flex items-center gap-1.5">
@@ -2006,7 +2053,8 @@ export function OrdersDashboard({ role = 'account_manager' }: { role?: OrdersDas
                   <div className="flex items-center justify-between mb-1.5">
                     <h3 className="font-semibold text-slate-700 text-xs">Order Items</h3>
                     <div className="flex items-center gap-2">
-                      {config.showItemEdit &&
+                      {!isViewOnlyOrder &&
+                        config.showItemEdit &&
                         config.myApprovalStages.includes(selectedOrder.workflowStage) &&
                         selectedOrder.orderStatus !== 'draft' &&
                         (user?.role === 'account_manager' ||
@@ -2056,29 +2104,31 @@ export function OrdersDashboard({ role = 'account_manager' }: { role?: OrdersDas
                     <div className="bg-white rounded-xl border border-blue-200 overflow-hidden flex flex-col min-h-[400px]">
                       <div className="bg-blue-50 px-3 py-1.5 border-b border-blue-200 flex items-center justify-between gap-2 shrink-0">
                         <div className="text-xs text-blue-700 font-medium flex items-center gap-1.5 min-w-0">
-                          <FileText size={14} /> Editing Mode - Adjust quantities, remove or add items
+                          <FileText size={14} /> {isViewOnlyOrder ? 'Read-only view mode' : 'Editing Mode - Adjust quantities, remove or add items'}
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <Button
-                            onClick={handleCancelEditing}
-                            size="sm"
-                            variant="outline"
-                            className="border-slate-300 bg-white"
-                            data-testid="button-cancel-edit"
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            onClick={handleAddItemViaShop}
-                            size="sm"
-                            className="bg-green-600 hover:bg-green-700"
-                            disabled={isLaunchingShopEdit}
-                            data-testid="button-add-item"
-                          >
-                            <Plus size={14} className="mr-1" />{' '}
-                            {isLaunchingShopEdit ? 'Opening…' : 'Add Item'}
-                          </Button>
-                        </div>
+                        {!isViewOnlyOrder && (
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Button
+                              onClick={handleCancelEditing}
+                              size="sm"
+                              variant="outline"
+                              className="border-slate-300 bg-white"
+                              data-testid="button-cancel-edit"
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              onClick={handleAddItemViaShop}
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700"
+                              disabled={isLaunchingShopEdit}
+                              data-testid="button-add-item"
+                            >
+                              <Plus size={14} className="mr-1" />{' '}
+                              {isLaunchingShopEdit ? 'Opening…' : 'Add Item'}
+                            </Button>
+                          </div>
+                        )}
                       </div>
                       <div className="flex flex-col flex-1 min-h-0 bg-white">
                         {orderEditCartModel.isLoadingProducts || editOrderProductsLoading ? (
@@ -2156,7 +2206,7 @@ export function OrdersDashboard({ role = 'account_manager' }: { role?: OrdersDas
                                         onBulkQuantityChange={orderEditCartModel.handleBulkQuantityChange}
                                         onRemoveProduct={orderEditCartModel.handleRemoveProduct}
                                         onToggleSelect={orderEditCartModel.handleToggleSelect}
-                                        readOnly={false}
+                                        readOnly={isViewOnlyOrder}
                                         highlightedRows={new Set()}
                                         convertSize={orderEditCartModel.convertSize}
                                         selectedSizeStandard={orderEditCartModel.selectedSizeStandard}
@@ -2327,7 +2377,7 @@ export function OrdersDashboard({ role = 'account_manager' }: { role?: OrdersDas
 
               <div className="border-t border-slate-200 px-3 py-2 bg-white flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  {selectedOrder.orderStatus === 'draft' && (
+                  {!isViewOnlyOrder && selectedOrder.orderStatus === 'draft' && (
                     <Button
                       type="button"
                       onClick={() => navigate(`/cart/${selectedOrder.id}`)}
@@ -2340,7 +2390,8 @@ export function OrdersDashboard({ role = 'account_manager' }: { role?: OrdersDas
                       Edit cart
                     </Button>
                   )}
-                  {config.myApprovalStages.includes(selectedOrder.workflowStage) &&
+                  {!isViewOnlyOrder &&
+                    config.myApprovalStages.includes(selectedOrder.workflowStage) &&
                     selectedOrder.orderStatus !== 'draft' && (
                     <>
                       {role === 'account_manager' ? (
@@ -2424,7 +2475,7 @@ export function OrdersDashboard({ role = 'account_manager' }: { role?: OrdersDas
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  {isEditingOrder && (
+                  {!isViewOnlyOrder && isEditingOrder && (
                     <Button
                       onClick={handleSaveEdits}
                       size="sm"
@@ -2436,7 +2487,10 @@ export function OrdersDashboard({ role = 'account_manager' }: { role?: OrdersDas
                     </Button>
                   )}
                   <Button
-                    onClick={() => setSelectedOrder(null)}
+                    onClick={() => {
+                      setSelectedOrder(null);
+                      setIsViewOnlyOrder(false);
+                    }}
                     variant="outline"
                     size="sm"
                     className="border-slate-300"

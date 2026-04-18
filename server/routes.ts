@@ -2901,6 +2901,46 @@ Always be professional and concise in your responses.`
     }
   });
 
+  // Rename draft cart
+  app.patch("/api/orders/:id", optionalAuth, async (req: AuthenticatedRequest, res) => {
+    try {
+      const orderId = req.params.id;
+      const sessionId = req.sessionID || "anonymous";
+      const order = await storage.getOrder(orderId);
+
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+
+      if (order.status !== "draft") {
+        return res.status(400).json({ message: "Only draft orders can be renamed" });
+      }
+
+      if (!(await userCanModifyDraftOrder(order, req, sessionId))) {
+        return res.status(403).json({ message: "Unauthorized to modify this order" });
+      }
+
+      const requestedName =
+        (typeof req.body?.nickname === "string" && req.body.nickname.trim()) ||
+        (typeof req.body?.orderName === "string" && req.body.orderName.trim()) ||
+        "";
+
+      if (!requestedName) {
+        return res.status(400).json({ message: "A non-empty cart name is required" });
+      }
+
+      const updatedOrder = await storage.updateOrder(orderId, {
+        nickname: requestedName,
+        orderName: requestedName,
+      });
+
+      res.json(updatedOrder);
+    } catch (error) {
+      console.error("Error renaming draft order:", error);
+      res.status(500).json({ message: "Failed to rename order" });
+    }
+  });
+
   // Submit draft order for approval
   app.post("/api/orders/:id/submit", optionalAuth, async (req: AuthenticatedRequest, res) => {
     try {

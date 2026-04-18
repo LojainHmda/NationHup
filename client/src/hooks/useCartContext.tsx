@@ -230,11 +230,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const renameDraftMutation = useMutation({
     mutationFn: async ({ draftId, newName }: { draftId: string; newName: string }) => {
-      await apiRequest(`/api/orders/${draftId}`, 'PATCH', {
+      const res = await apiRequest(`/api/orders/${draftId}`, 'PATCH', {
         nickname: newName,
         orderName: newName,
       });
-      return { draftId, newName };
+      const updated = (await res.json()) as Order;
+      return updated;
     },
     onMutate: async ({ draftId, newName }) => {
       await queryClient.cancelQueries({ queryKey: draftsKey });
@@ -244,13 +245,22 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       );
       return { previousDrafts };
     },
-    onError: (err, variables, context) => {
+    // Merge server's authoritative row so we never depend on a refetch that could
+    // race with other cache updates and briefly show the old name.
+    onSuccess: (updated) => {
+      queryClient.setQueryData<Order[]>(draftsKey, (old) =>
+        old ? old.map(d => d.id === updated.id ? { ...d, ...updated } : d) : [updated]
+      );
+    },
+    onError: (err, _variables, context) => {
       if (context?.previousDrafts) {
         queryClient.setQueryData(draftsKey, context.previousDrafts);
       }
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: draftsKey });
+      toast({
+        title: "Couldn't rename cart",
+        description: getApiErrorMessage(err),
+        variant: "destructive",
+      });
     },
   });
 

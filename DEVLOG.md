@@ -327,3 +327,111 @@ Chronological record of code changes. Updated after every substantive code chang
 **Reason:** User asked not to show product lines in the popup—only summary, AM note, and totals.
 
 ---
+
+### [SEQ-028] 2026-04-17 17:48
+
+**Files:** `client/src/pages/account-manager.tsx`, `DEVLOG.md`
+
+**Action:** Add per-order Excel export action in Orders table
+
+**Details:** Added `xlsx` export support to Account Manager orders table with a new `Excel` action button beside existing row actions. Implemented `handleExportOrderExcel(order)` to transform order line items into worksheet rows, set readable column widths, generate `order_<id>_<date>.xlsx`, and show success/empty-order toast feedback.
+
+**Reason:** User requested an Excel button in row actions to export each order.
+
+---
+
+### [SEQ-029] 2026-04-17 17:55
+
+**Files:** `client/src/pages/account-manager.tsx`, `DEVLOG.md`
+
+**Action:** Remove sensitive/status fields from order Excel export
+
+**Details:** Updated row export mapping to exclude `Customer Email`, `Stage`, and `Status` columns while keeping the rest of the Excel export format unchanged. Adjusted worksheet column widths to match the reduced column set.
+
+**Reason:** User requested these fields be removed from the generated Excel file.
+
+---
+
+### [SEQ-030] 2026-04-17 17:58
+
+**Files:** `client/src/pages/account-manager.tsx`, `DEVLOG.md`
+
+**Action:** Remove Approve/Reject buttons from orders table row actions
+
+**Details:** Updated the Orders table action cell UI to remove inline `Approve` and `Reject` buttons while preserving existing `View`, `Excel`, and role-gated `Edit` actions. No backend approval/rejection logic was changed.
+
+**Reason:** User requested Approve and Reject be hidden from the actions column UI without other changes.
+
+---
+
+### [SEQ-031] 2026-04-17 18:15
+
+**Files:** `client/src/pages/account-manager.tsx`, `DEVLOG.md`
+
+**Action:** Add strict view-only gate for order review modal
+
+**Details:** Added `isViewOnlyOrder` UI state and wired `View` row action to open the same detailed order dialog in read-only mode. In view-only mode, mutating controls are hidden (order edit triggers, sales detail edits, draft cart edit CTA, approval/reject controls, save-edit button) while existing `Edit` behavior and logic remain unchanged.
+
+**Reason:** User requested `View` to use the detailed modal style in strict read-only mode without changing edit flow logic.
+
+---
+
+### [SEQ-032] 2026-04-17 18:20
+
+**Files:** `client/src/pages/account-manager.tsx`, `DEVLOG.md`
+
+**Action:** Align View modal items panel with edit-style UI
+
+**Details:** Updated `View` action to open the same edit-style order items panel structure by entering the same panel mode with read-only gating (`readOnly={isViewOnlyOrder}`), while hiding mutation controls (`Cancel`, `Add Item`) and showing a read-only mode label. Existing `Edit` behavior and logic remain unchanged.
+
+**Reason:** User reported View still showed a different items layout and requested the exact edit-style UI in strict read-only mode.
+
+---
+
+### [SEQ-033] 2026-04-17 18:22
+
+**Files:** `client/src/pages/account-manager.tsx`, `DEVLOG.md`
+
+**Action:** Add Excel export button to order modal header meta row
+
+**Details:** Inserted an `Excel` button next to the total amount in the modal header details line (`customer / email / phone / units / total`). Button styling matches actions table buttons and reuses existing `handleExportOrderExcel(selectedOrder)` flow.
+
+**Reason:** User requested an Excel export button beside the total value in the order modal header UI.
+
+---
+
+### [SEQ-034] 2026-04-17 18:30
+
+**Files:** `client/src/pages/account-manager.tsx`, `DEVLOG.md`
+
+**Action:** Apply distinct color styling to modal Excel button
+
+**Details:** Updated the modal header Excel export button to an emerald color scheme (`text-emerald-700`, `border-emerald-300`, `bg-emerald-50`, emerald hover states) to visually differentiate it from neutral action buttons.
+
+**Reason:** User requested the modal Excel button appear in a different color.
+
+---
+
+### [SEQ-035] 2026-04-17 18:56
+
+**Files:** `server/routes.ts`, `DEVLOG.md`
+
+**Action:** Add draft rename API used by cart sidebar pen edit
+
+**Details:** Implemented `PATCH /api/orders/:id` for draft cart rename with order existence check, draft-only guard, existing draft modification authorization (`userCanModifyDraftOrder`), non-empty name validation from `nickname`/`orderName`, and persistence to both fields.
+
+**Reason:** Cart name edited in `ShopCartSidebar` briefly updated then reverted because rename requests needed a working backend endpoint.
+
+---
+
+### [SEQ-036] 2026-04-18 14:05
+
+**Files:** `client/src/hooks/useCartContext.tsx`, `DEVLOG.md`
+
+**Action:** Persist cart rename in sidebar + cart page without refetch revert
+
+**Details:** Hardened `renameDraftMutation` so the server's authoritative updated order is merged into the drafts cache on success (removes the `onSettled` invalidate that triggered a refetch race and briefly flashed the old name back into `ShopCartSidebar` and the cart page). Added a destructive toast on failure via `getApiErrorMessage` so rejected renames (e.g., non-draft status or missing permission) no longer appear to silently revert.
+
+**Reason:** User report: editing a cart name in the cart sidebar showed the new name for a few seconds and then reverted, both in the sidebar and on the cart page.
+
+---
