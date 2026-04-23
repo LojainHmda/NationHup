@@ -362,6 +362,11 @@ export default function StockBrandsPage() {
     }
   };
 
+  const pendingVisibilityBrandId =
+    toggleBrandVisibilityMutation.isPending
+      ? toggleBrandVisibilityMutation.variables?.brandId
+      : null;
+
   return (
     <>
       <div className="p-8">
@@ -488,10 +493,10 @@ export default function StockBrandsPage() {
                                 brandId: brand.id, 
                                 isActive: !brand.isActive 
                               })}
-                              disabled={toggleBrandVisibilityMutation.isPending}
+                              disabled={pendingVisibilityBrandId === brand.id}
                               data-testid={`button-toggle-brand-${brand.id}`}
                             >
-                              {toggleBrandVisibilityMutation.isPending ? (
+                              {pendingVisibilityBrandId === brand.id ? (
                                 <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                               ) : brand.isActive ? (
                                 <EyeOff className="h-3 w-3 mr-1" />

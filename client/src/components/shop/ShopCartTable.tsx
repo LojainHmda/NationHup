@@ -353,7 +353,6 @@ export function ShopCartTable({
   const [copiedData, setCopiedData] = useState<Array<Array<number>> | null>(null);
   const [copiedShape, setCopiedShape] = useState<{ rows: number; cols: number } | null>(null);
 
-  const [hoveredCellKey, setHoveredCellKey] = useState<string | null>(null);
 
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set(products.map((p) => p.id)));
   const [productToDelete, setProductToDelete] = useState<{ id: string; name: string } | null>(null);
@@ -547,9 +546,6 @@ export function ShopCartTable({
   ) => {
     const product = products[productIndex];
     const size = allSizes[sizeIndex];
-    const cellKey = getCellKey(product.id, size);
-    setHoveredCellKey(cellKey);
-
     if (product && size && !isSizeAvailable(product, size)) {
       if (isSelecting || isFilling) return; // Don't expand selection/fill into unavailable cells
     }
@@ -941,7 +937,7 @@ export function ShopCartTable({
   }, [selectedCells, editingCell, fillPreview, products, allSizes]);
 
   return (
-    <div className="space-y-3 relative" ref={tableRef} onMouseUp={handleMouseUp} onMouseLeave={() => setHoveredCellKey(null)}>
+    <div className="space-y-3 relative" ref={tableRef} onMouseUp={handleMouseUp}>
       {showFillPopup && fillPopupPosition && (
         <div className="absolute z-50" style={{ top: `${fillPopupPosition.top}px`, left: `${fillPopupPosition.left}px` }}>
           <PopupCentered
@@ -958,8 +954,8 @@ export function ShopCartTable({
       )}
 
       <div className="border border-border overflow-hidden bg-gray-50 dark:bg-gray-900">
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
+        <div className="overflow-x-scroll overflow-y-hidden [scrollbar-gutter:stable]">
+          <table className="min-w-max w-full border-collapse">
             <thead>
               <tr className="bg-gray-100 dark:bg-gray-800 border-b border-border">
                 <th className="w-12 p-2 sticky left-0 z-10 bg-gray-100 dark:bg-gray-800 border-r border-border">
@@ -975,8 +971,8 @@ export function ShopCartTable({
                     </div>
                   </th>
                 ))}
-                <th className="w-16 p-2 sticky right-20 z-10 bg-gray-100 dark:bg-gray-800 border-l border-border text-center text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Total</th>
-                <th className="w-20 p-2 sticky right-0 z-10 bg-gray-100 dark:bg-gray-800 border-l border-border text-center text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Total LP</th>
+                <th className="w-16 p-2 sticky right-20 z-40 bg-gray-100 dark:bg-gray-800 border-l border-r border-border text-center text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Total</th>
+                <th className="w-20 p-2 sticky right-0 z-40 bg-gray-100 dark:bg-gray-800 border-border text-center text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Total LP</th>
               </tr>
             </thead>
             <tbody>
@@ -1115,7 +1111,6 @@ export function ShopCartTable({
                       const isEditing = !isCartonProduct && !isSizeUnavailable && editingCell && editingCell.productIndex === productIndex && editingCell.sizeIndex === sizeIndex;
                       const isOverStockAlert = overStockAlertCells.has(cellKey);
                       const isOrderLimitAlert = orderLimitAlertCells.has(cellKey);
-                      const isHovered = hoveredCellKey === cellKey;
                       const limitForSize = getLimitForSize(product, size);
                       const hasOrderLimit = limitForSize != null;
 
@@ -1179,7 +1174,6 @@ export function ShopCartTable({
                           data-testid={`cell-${product.id}-${size}`}
                           onMouseDown={(e) => handleCellMouseDown(productIndex, sizeIndex, e)}
                           onMouseEnter={() => handleCellMouseEnter(productIndex, sizeIndex)}
-                          onMouseLeave={() => setHoveredCellKey(null)}
                         >
                           <div className="flex flex-col items-center justify-center h-full">
                             {hasOrderLimit && <div className="text-[8px] text-red-600 dark:text-red-400 leading-none mb-0.5 pointer-events-none" style={{ background: 'transparent' }}>limit order : {limitForSize}</div>}
@@ -1197,7 +1191,7 @@ export function ShopCartTable({
                               </div>
                             )}
                           </div>
-                          {!isEditing && isHovered && (
+                          {!isEditing && (
                             <div
                               className="absolute bottom-0 right-0 w-2 h-2 bg-blue-500 cursor-move z-30"
                               onMouseDown={(e) => handleFillHandleMouseDown(productIndex, sizeIndex, e)}
@@ -1206,7 +1200,7 @@ export function ShopCartTable({
                           )}
                           {sizeIndex === 0 && (
                             <div
-                              className="absolute top-0 left-0 w-3 h-3 bg-green-500 cursor-grab active:cursor-grabbing z-20 opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="absolute top-0 left-0 w-3 h-3 bg-green-500 cursor-grab active:cursor-grabbing z-20 opacity-100"
                               style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }}
                               onMouseDown={(e) => handleRowFillStart(productIndex, e)}
                               title="Drag to copy row values"
@@ -1216,7 +1210,7 @@ export function ShopCartTable({
                         </td>
                       );
                     })}
-                    <td className="p-2 text-center sticky right-20 z-10 bg-white dark:bg-gray-950 group-hover:bg-gray-100 dark:group-hover:bg-gray-800 border-l border-border">
+                    <td className="p-2 text-center sticky right-20 z-40 bg-white dark:bg-gray-950 group-hover:bg-gray-100 dark:group-hover:bg-gray-800 border-l border-r border-border">
                       <div data-testid={`total-qty-${product.id}`}>
                         {isCartonProduct ? (
                           (() => {
@@ -1236,7 +1230,7 @@ export function ShopCartTable({
                         )}
                       </div>
                     </td>
-                    <td className="p-2 text-center sticky right-0 z-10 bg-white dark:bg-gray-950 group-hover:bg-gray-100 dark:group-hover:bg-gray-800 border-l border-border">
+                    <td className="p-2 text-center sticky right-0 z-40 bg-white dark:bg-gray-950 group-hover:bg-gray-100 dark:group-hover:bg-gray-800 border-border">
                       <span className="text-xs font-semibold" data-testid={`total-lp-${product.id}`}>{getCurrencySymbol(userCurrency)}{productPrice.toFixed(2)}</span>
                     </td>
                   </tr>

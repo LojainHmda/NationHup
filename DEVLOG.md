@@ -4,6 +4,198 @@ Chronological record of code changes. Updated after every substantive code chang
 
 ---
 
+### [SEQ-052] 2026-04-23 18:55
+
+**Files:** `client/src/pages/stock-brands.tsx`, `DEVLOG.md`
+
+**Action:** Scope brand hide/show loading state to clicked row
+
+**Details:** Added per-row pending detection using `toggleBrandVisibilityMutation.variables?.brandId` so only the clicked brand’s hide/show button is disabled and shows spinner, instead of all brand rows entering loading state at once.
+
+**Reason:** User reported that clicking `Hide` triggered loading indicators across all brands even though only one brand was being toggled.
+
+---
+
+### [SEQ-051] 2026-04-23 18:38
+
+**Files:** `client/src/components/shop/ShopProductCard.tsx`, `DEVLOG.md`
+
+**Action:** Tighten gender/price vertical spacing block
+
+**Details:** Reduced reserved bottom area height (`pb-12 sm:pb-14`), decreased top offset above gender (`pt-1` with `leading-none`), and moved the price block slightly down (`bottom-2 sm:bottom-3`) to minimize extra vertical space around the gender row.
+
+**Reason:** User requested less empty space above and below the gender text in the card’s bottom info section.
+
+---
+
+### [SEQ-049] 2026-04-23 18:04
+
+**Files:** `client/src/components/shop/ShopProductCard.tsx`, `DEVLOG.md`
+
+**Action:** Eliminate remaining price row gap
+
+**Details:** Removed residual spacing in the bottom-right price block by setting container spacing to `space-y-0` and applying `leading-none` to both wholesale/retail lines, tightening vertical separation further.
+
+**Reason:** User still observed a visible gap between the two price rows.
+
+---
+
+### [SEQ-048] 2026-04-23 18:01
+
+**Files:** `client/src/components/shop/ShopProductCard.tsx`, `DEVLOG.md`
+
+**Action:** Reduce vertical spacing between price lines
+
+**Details:** Tightened the price block vertical gap by changing container spacing from `space-y-1` to `space-y-0.5`, reducing line separation between wholesale and retail rows.
+
+**Reason:** User requested less vertical height between the two price rows.
+
+---
+
+### [SEQ-047] 2026-04-23 16:02
+
+**Files:** `client/src/components/shop/ShopProductCard.tsx`, `DEVLOG.md`
+
+**Action:** Increase product card price number font size
+
+**Details:** Enlarged only the wholesale/retail price value text (`text-sm sm:text-base`, bold) while keeping the labels small and light gray to preserve label/value hierarchy.
+
+**Reason:** User requested larger price numbers on the shop product card.
+
+---
+
+### [SEQ-046] 2026-04-23 15:59
+
+**Files:** `client/src/components/shop/ShopProductCard.tsx`, `DEVLOG.md`
+
+**Action:** Refine product card price label/amount contrast
+
+**Details:** Styled `Wholesale Price` and `Retail Price` labels with smaller, lighter gray text while rendering the actual formatted price values in black with stronger weight for clearer contrast.
+
+**Reason:** User requested subtle label styling with black price numbers for better readability hierarchy.
+
+---
+
+### [SEQ-045] 2026-04-23 15:55
+
+**Files:** `client/src/components/shop/ShopProductCard.tsx`, `DEVLOG.md`
+
+**Action:** Pin product card prices to bottom-right corner
+
+**Details:** Made the card details container `relative`, moved the wholesale/retail price block to an absolute bottom-right position, and added bottom padding so all text stays above it; prices now render in the lower-right corner beneath other metadata.
+
+**Reason:** User requested the price section appear in the corner below everything else on the product card.
+
+---
+
+### [SEQ-044] 2026-04-23 15:50
+
+**Files:** `client/src/components/shop/ShopProductCard.tsx`, `DEVLOG.md`
+
+**Action:** Improve product card price visibility and placement
+
+**Details:** Reworked the price block in shop product cards so it anchors to the bottom-right area of the details section and increased typography for both `Wholesale Price` and `Retail Price` lines to improve readability.
+
+**Reason:** User requested larger, clearer price labels/values positioned at the right bottom corner of the product card.
+
+---
+
+### [SEQ-043] 2026-04-23 15:28
+
+**Files:** `client/src/components/shop/ShopProductCard.tsx`, `DEVLOG.md`
+
+**Action:** Show wholesale and retail prices on shop cards
+
+**Details:** Updated shop product card pricing section to display two lines: `Wholesale Price` and `Retail Price`, each formatted with the existing currency formatter and product base currency, with retail shown beneath wholesale.
+
+**Reason:** User requested both wholesale and retail values be visible on product cards instead of showing only one price.
+
+---
+
+### [SEQ-042] 2026-04-23 15:21
+
+**Files:** `client/src/components/shop/ShopCartTable.tsx`, `DEVLOG.md`
+
+**Action:** Remove seam between sticky total columns
+
+**Details:** Adjusted sticky totals column borders so `Total` now owns the shared divider (`border-r`) while `Total LP` no longer adds a duplicate left divider, eliminating the visible gap/seam between these two pinned-right columns in header and body.
+
+**Reason:** User reported a small visual gap between `TOTAL` and `TOTAL LP` columns during scroll.
+
+---
+
+### [SEQ-041] 2026-04-23 15:19
+
+**Files:** `client/src/components/shop/ShopCartTable.tsx`, `DEVLOG.md`
+
+**Action:** Keep right sticky totals above scrollable cell overlays
+
+**Details:** Increased z-index for sticky `Total` and `Total LP` header/body cells from `z-10` to `z-40` so these two pinned right columns always layer above quantity-cell overlay indicators while horizontally scrolling.
+
+**Reason:** User reported blue indicators were rendering above the sticky totals columns during horizontal scroll and requested only this layering fix.
+
+---
+
+### [SEQ-040] 2026-04-23 15:06
+
+**Files:** `client/src/components/shop/ShopCartTable.tsx`, `DEVLOG.md`
+
+**Action:** Ensure cart table can scroll horizontally
+
+**Details:** Updated the cart table wrapper to `overflow-x-scroll overflow-y-hidden` and set the table to `min-w-max w-full`, forcing content-width sizing so extra size columns create real horizontal overflow and can be scrolled.
+
+**Reason:** User still could not scroll horizontally in the cart table despite the scrollbar visibility change.
+
+---
+
+### [SEQ-037] 2026-04-23 15:03
+
+**Files:** `client/src/components/shop/ShopCartTable.tsx`, `DEVLOG.md`
+
+**Action:** Force persistent horizontal scrollbar in cart table
+
+**Details:** Changed the cart table scroll container from `overflow-x-auto` to `overflow-x-scroll` and added `scrollbar-gutter: stable` so the horizontal slider area remains visible and reserved consistently for the `ShopCartTable` size columns.
+
+**Reason:** User requested the cart group/table horizontal slider always stay visible instead of only appearing in narrower viewport states.
+
+---
+
+### [SEQ-039] 2026-04-23 14:52
+
+**Files:** `client/src/components/shop/ShopCartTable.tsx`, `DEVLOG.md`
+
+**Action:** Keep cart drag handles visible at all times
+
+**Details:** Updated cart table quantity-grid drag handle rendering so the cell fill handle and row copy corner handle are always visible instead of appearing only on hover. Removed now-unneeded hover tracking state and event handlers tied to that visibility behavior.
+
+**Reason:** User requested the cart slider cursor/handle to always be visible for easier interaction.
+
+---
+
+### [SEQ-038] 2026-04-22 17:23
+
+**Files:** `client/src/pages/shop.tsx`, `client/src/components/shop/ShopProductCard.tsx`, `DEVLOG.md`
+
+**Action:** Restore 2-up mobile product grid with compact card content
+
+**Details:** Changed the shop loading and product grids to render two columns on mobile while preserving existing tablet/laptop breakpoints. Tightened `ShopProductCard` spacing, badge/button sizing, thumbnail size, and text sizing for small screens only (`sm` and above keep prior desktop sizing) so two cards fit cleanly without content crowding.
+
+**Reason:** User requested two products per row on phones with readable card content, while keeping laptop layout unchanged.
+
+---
+
+### [SEQ-037] 2026-04-22 17:17
+
+**Files:** `client/src/pages/shop.tsx`, `DEVLOG.md`
+
+**Action:** Make shop page mobile responsive and prevent layout overlap
+
+**Details:** Updated the shop page to use mobile-first responsive classes: category tabs now scroll horizontally on small screens, the filter/search toolbar stacks cleanly instead of forcing one crowded row, the filter sidebar becomes full-width on mobile with constrained height, and product/loading grids now start at one column on phones before scaling up by breakpoint.
+
+**Reason:** User reported that the shop page looked good on laptop but had overlapping and broken layout on phone screens.
+
+---
+
 ### [SEQ-001] 2026-04-11
 
 **Files:** `DEVLOG.md`, `.cursorrules`, `CLAUDE.md`

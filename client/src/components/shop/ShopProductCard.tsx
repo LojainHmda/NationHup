@@ -151,8 +151,8 @@ export function ShopProductCard({
   return (
     <div className="group bg-white rounded-2xl relative overflow-hidden border border-black/30 shadow-sm hover:shadow-xl hover:border-black/50 transition-all duration-300 hover:-translate-y-1">
       {selectedVariant.isPreOrder && (
-        <div className="absolute top-4 left-4 z-10">
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-white shadow-lg" style={{ backgroundColor: '#FD4338' }}>
+        <div className="absolute top-2 left-2 sm:top-4 sm:left-4 z-10">
+          <span className="inline-flex items-center px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-white shadow-lg" style={{ backgroundColor: '#FD4338' }}>
             Pre-Order
           </span>
         </div>
@@ -160,7 +160,7 @@ export function ShopProductCard({
       
       <div className="relative">
         <div 
-          className="aspect-square bg-gradient-to-br from-gray-50 to-white cursor-pointer flex items-center justify-center p-6"
+          className="aspect-square bg-gradient-to-br from-gray-50 to-white cursor-pointer flex items-center justify-center p-3 sm:p-6"
           onClick={navigateToProduct}
           data-testid={`link-product-${selectedVariant.id}`}
         >
@@ -182,7 +182,7 @@ export function ShopProductCard({
             <button
               onClick={() => handleAddToCart(selectedVariant, color)}
               disabled={disabled}
-              className={`absolute top-4 right-4 h-10 flex items-center justify-center gap-2 transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed rounded-full px-4 shadow-lg ${
+              className={`absolute top-2 right-2 sm:top-4 sm:right-4 h-8 sm:h-10 flex items-center justify-center gap-1 sm:gap-2 transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed rounded-full px-2.5 sm:px-4 shadow-lg ${
                 inCart 
                   ? "bg-gradient-to-r from-[#FE4438] to-[#FE4438] text-white shadow-[#FE4438]/30" 
                   : "bg-white/90 backdrop-blur-sm hover:bg-white text-gray-700 hover:text-[#FE4438] border border-gray-200"
@@ -190,12 +190,12 @@ export function ShopProductCard({
               data-testid={`button-add-to-cart-main-${selectedVariant.id}`}
             >
               {inCart ? (
-                <Check className="w-4 h-4" strokeWidth={2.5} />
+                <Check className="w-3 h-3 sm:w-4 sm:h-4" strokeWidth={2.5} />
               ) : (
-                <ShoppingCart className="w-4 h-4" strokeWidth={2} />
+                <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" strokeWidth={2} />
               )}
               <span 
-                className={`text-xs font-semibold whitespace-nowrap overflow-hidden transition-all duration-300 ${
+                className={`text-[10px] sm:text-xs font-semibold whitespace-nowrap overflow-hidden transition-all duration-300 ${
                   inCart ? "max-w-20 opacity-100" : "max-w-0 opacity-0"
                 }`}
               >
@@ -206,7 +206,7 @@ export function ShopProductCard({
         })()}
       </div>
 
-      <div className="relative px-4 pt-2">
+      <div className="relative px-2 sm:px-4 pt-2">
         {canScrollLeft && (
           <button
             onClick={scrollLeft}
@@ -247,7 +247,7 @@ export function ShopProductCard({
               >
                 <button
                   onClick={() => setSelectedVariantIndex(index)}
-                  className={`w-12 h-12 rounded-lg transition-all overflow-hidden border-2 ${
+                  className={`w-9 h-9 sm:w-12 sm:h-12 rounded-lg transition-all overflow-hidden border-2 ${
                     isSelected 
                       ? 'border-gray-900 shadow-md' 
                       : 'border-transparent hover:border-gray-300'
@@ -290,7 +290,7 @@ export function ShopProductCard({
         </div>
       </div>
 
-      <div className="px-4 pb-4 pt-2 space-y-1.5">
+      <div className="relative px-2 sm:px-4 pb-12 sm:pb-14 pt-2 space-y-1">
         <div className="flex items-center justify-between">
           <p className="text-gray-400 text-xs font-medium tracking-wide uppercase">
             {selectedVariant.sku}
@@ -302,17 +302,20 @@ export function ShopProductCard({
           )}
         </div>
         <h3 
-          className="text-[15px] font-semibold text-gray-900 line-clamp-2 leading-snug cursor-pointer hover:text-[#FE4438] transition-colors"
+          className="text-xs sm:text-[15px] font-semibold text-gray-900 line-clamp-2 leading-snug cursor-pointer hover:text-[#FE4438] transition-colors"
           onClick={navigateToProduct}
         >
           {selectedVariant.name}
         </h3>
-        <div className="flex items-center justify-between pt-1">
-          <p className="text-xs text-gray-500">
-            {selectedVariant.gender}
+        <p className="pt-1 text-[10px] sm:text-xs text-gray-500 leading-none">
+          {selectedVariant.gender}
+        </p>
+        <div className="absolute bottom-2 sm:bottom-3 right-2 sm:right-4 text-right space-y-0">
+          <p className="text-[10px] sm:text-xs text-gray-400 font-medium leading-none">
+            Wholesale Price: <span className="text-black text-sm sm:text-base font-bold">{formatPrice(Number(selectedVariant.wholesalePrice), selectedVariant.baseCurrency || "USD")}</span>
           </p>
-          <p className="text-lg font-bold text-gray-900">
-            {formatPrice(Number(selectedVariant.wholesalePrice), selectedVariant.baseCurrency || "USD")}
+          <p className="text-[10px] sm:text-xs text-gray-400 font-medium leading-none">
+            Retail Price: <span className="text-black text-sm sm:text-base font-bold">{formatPrice(Number(selectedVariant.retailPrice), selectedVariant.baseCurrency || "USD")}</span>
           </p>
         </div>
       </div>

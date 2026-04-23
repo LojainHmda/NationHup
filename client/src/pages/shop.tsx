@@ -684,13 +684,13 @@ export default function Shop() {
       <div className="flex-1 min-w-0 flex flex-col">
         <div className="bg-black sticky top-0 z-20 shadow-sm">
           <div className="max-w-7xl mx-auto">
-            <nav className="flex items-center justify-center gap-2 py-3 px-6">
+            <nav className="flex items-center justify-start sm:justify-center gap-1 sm:gap-2 py-3 px-3 sm:px-6 overflow-x-auto whitespace-nowrap">
               <button 
                 onClick={() => { 
                   updateFilter('mainCategories', []); 
                   updateFilter('kidsAgeGroups', []); 
                 }} 
-                className={`relative px-6 py-2.5 text-sm font-semibold tracking-wide transition-all duration-300 text-white ${
+                className={`relative shrink-0 px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold tracking-wide transition-all duration-300 text-white ${
                   !(filters.mainCategories?.length) && !(filters.kidsAgeGroups?.length)
                     ? 'border-b-2 border-[#FD4338]' 
                     : 'hover:opacity-80'
@@ -704,7 +704,7 @@ export default function Shop() {
                   updateFilter('mainCategories', ['Male']); 
                   updateFilter('kidsAgeGroups', ['Adult']); 
                 }} 
-                className={`relative px-6 py-2.5 text-sm font-semibold tracking-wide transition-all duration-300 text-white ${
+                className={`relative shrink-0 px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold tracking-wide transition-all duration-300 text-white ${
                   filters.mainCategories?.includes('Male') && filters.kidsAgeGroups?.includes('Adult') && filters.kidsAgeGroups?.length === 1
                     ? 'border-b-2 border-[#FD4338]' 
                     : 'hover:opacity-80'
@@ -718,7 +718,7 @@ export default function Shop() {
                   updateFilter('mainCategories', ['Female']); 
                   updateFilter('kidsAgeGroups', ['Adult']); 
                 }} 
-                className={`relative px-6 py-2.5 text-sm font-semibold tracking-wide transition-all duration-300 text-white ${
+                className={`relative shrink-0 px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold tracking-wide transition-all duration-300 text-white ${
                   filters.mainCategories?.includes('Female') && filters.kidsAgeGroups?.includes('Adult') && filters.kidsAgeGroups?.length === 1
                     ? 'border-b-2 border-[#FD4338]' 
                     : 'hover:opacity-80'
@@ -732,7 +732,7 @@ export default function Shop() {
                   updateFilter('mainCategories', ['Male']); 
                   updateFilter('kidsAgeGroups', ['Junior', 'Kids', 'Infant']); 
                 }} 
-                className={`relative px-6 py-2.5 text-sm font-semibold tracking-wide transition-all duration-300 text-white ${
+                className={`relative shrink-0 px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold tracking-wide transition-all duration-300 text-white ${
                   filters.mainCategories?.includes('Male') && 
                   (filters.kidsAgeGroups?.includes('Junior') || filters.kidsAgeGroups?.includes('Kids') || filters.kidsAgeGroups?.includes('Infant')) &&
                   !filters.kidsAgeGroups?.includes('Adult')
@@ -748,7 +748,7 @@ export default function Shop() {
                   updateFilter('mainCategories', ['Female']); 
                   updateFilter('kidsAgeGroups', ['Junior', 'Kids', 'Infant']); 
                 }} 
-                className={`relative px-6 py-2.5 text-sm font-semibold tracking-wide transition-all duration-300 text-white ${
+                className={`relative shrink-0 px-3 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold tracking-wide transition-all duration-300 text-white ${
                   filters.mainCategories?.includes('Female') && 
                   (filters.kidsAgeGroups?.includes('Junior') || filters.kidsAgeGroups?.includes('Kids') || filters.kidsAgeGroups?.includes('Infant')) &&
                   !filters.kidsAgeGroups?.includes('Adult')
@@ -764,17 +764,18 @@ export default function Shop() {
         </div>
 
         <div className="bg-white border-b border-gray-100">
-          <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-6">
             <BrandLogoFilter filters={filters} onToggleArrayFilter={toggleArrayFilter} productType={productType} />
           </div>
         </div>
 
         <div className="bg-gradient-to-r from-[#fffbf5] to-white border-b border-gray-100">
-          <div className="max-w-7xl mx-auto px-6 py-4">
-            <div className="flex items-center gap-4">
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-4">
+              <div className="flex items-center gap-2 sm:gap-3">
               <Button 
                 onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)} 
-                className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 focus:outline-none focus:ring-0 focus-visible:ring-0 ${
+                className={`inline-flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 focus:outline-none focus:ring-0 focus-visible:ring-0 ${
                   isFilterPanelOpen 
                     ? 'bg-gradient-to-r from-[#FE4438] to-[#FE4438] text-white shadow-lg shadow-[#FE4438]/30 hover:shadow-xl hover:from-[#FE4438] hover:to-[#FE4438]' 
                     : 'bg-white text-gray-700 border border-gray-200 hover:border-[#FE4438] hover:text-[#FE4438] shadow-sm hover:shadow-md hover:bg-white'
@@ -794,7 +795,7 @@ export default function Shop() {
 
               <Select value={sizeStandard} onValueChange={(value: SizeStandard) => setSizeStandard(value)}>
                 <SelectTrigger 
-                  className="w-[100px] h-10 bg-white border border-gray-200 rounded-xl text-sm font-medium hover:border-[#FE4438] transition-colors"
+                  className="w-[96px] sm:w-[100px] h-10 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm font-medium hover:border-[#FE4438] transition-colors"
                   data-testid="select-size-standard"
                 >
                   <SelectValue placeholder="Size" />
@@ -805,40 +806,43 @@ export default function Shop() {
                   <SelectItem value="UK" data-testid="size-standard-uk">UK Sizes</SelectItem>
                 </SelectContent>
               </Select>
+              </div>
 
-              <div className="flex-1 max-w-xl">
+              <div className="w-full lg:flex-1 lg:max-w-xl">
                 <SmartFilterSearch filters={filters} onFilterChange={updateFilter} onToggleArrayFilter={toggleArrayFilter} productType={productType} />
               </div>
 
-              {activeFilterCount > 0 && (
-                <Button
-                  onClick={clearAllFilters}
-                  variant="ghost"
-                  className="text-sm font-semibold text-[#FE4438] hover:text-[#FE4438] hover:bg-[#FE4438]/5 transition-all duration-300"
-                  data-testid="button-clear-filters"
-                >
-                  <X className="h-4 w-4 mr-1" />
-                  Clear All
-                </Button>
-              )}
+              <div className="flex items-center justify-between lg:justify-end gap-3">
+                {activeFilterCount > 0 && (
+                  <Button
+                    onClick={clearAllFilters}
+                    variant="ghost"
+                    className="text-xs sm:text-sm font-semibold text-[#FE4438] hover:text-[#FE4438] hover:bg-[#FE4438]/5 transition-all duration-300"
+                    data-testid="button-clear-filters"
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Clear All
+                  </Button>
+                )}
 
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <Package className="h-4 w-4" />
-                <span className="font-medium">
-                  {totalProductCount !== null 
-                    ? `${totalProductCount.toLocaleString()} Products` 
-                    : `${products.length.toLocaleString()} Products`}
-                </span>
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+                  <Package className="h-4 w-4" />
+                  <span className="font-medium">
+                    {totalProductCount !== null 
+                      ? `${totalProductCount.toLocaleString()} Products` 
+                      : `${products.length.toLocaleString()} Products`}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="flex-1 flex">
+        <div className="flex-1 flex flex-col lg:flex-row">
           {isFilterPanelOpen && (
-            <aside className="w-72 bg-white border-r border-gray-100 flex-shrink-0 shadow-sm">
-              <div className="sticky top-[52px] h-[calc(100vh-52px)] overflow-y-auto">
-                <div className="p-5">
+            <aside className="w-full lg:w-72 bg-white lg:border-r border-b lg:border-b-0 border-gray-100 flex-shrink-0 shadow-sm">
+              <div className="lg:sticky lg:top-[52px] lg:h-[calc(100vh-52px)] overflow-y-auto max-h-[50vh] lg:max-h-none">
+                <div className="p-4 sm:p-5">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-bold text-gray-900">Filters</h3>
                     <div className="flex items-center gap-2">
@@ -875,10 +879,10 @@ export default function Shop() {
           )}
 
           <main className="flex-1 bg-[#F1F4F3]">
-            <div className="max-w-7xl mx-auto px-6 py-8">
+            <div className="max-w-7xl mx-auto px-3 sm:px-6 py-5 sm:py-8">
               {filters.search && (
-                <div className="flex items-center justify-between mb-8 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 sm:mb-8 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                  <div className="flex items-center gap-3 min-w-0">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FE4438] to-[#FE4438] flex items-center justify-center shadow-lg shadow-[#FE4438]/30">
                       <Filter className="h-5 w-5 text-white" />
                     </div>
@@ -899,7 +903,7 @@ export default function Shop() {
               )}
 
               {isLoadingProducts ? (
-                <div className={`grid gap-6 ${isFilterPanelOpen ? 'grid-cols-2 lg:grid-cols-3' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}`}>
+                <div className={`grid gap-4 sm:gap-6 ${isFilterPanelOpen ? 'grid-cols-2 sm:grid-cols-2 xl:grid-cols-3' : 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'}`}>
                   {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
                     <div key={i} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
                       <div className="animate-pulse">
@@ -929,7 +933,7 @@ export default function Shop() {
                 </div>
               ) : (
                 <div 
-                  className={`grid gap-5 transition-opacity duration-100 ${isFilterPanelOpen ? 'grid-cols-2 lg:grid-cols-3' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'} ${isScrollReady ? 'opacity-100' : 'opacity-0'}`}
+                  className={`grid gap-4 sm:gap-5 transition-opacity duration-100 ${isFilterPanelOpen ? 'grid-cols-2 sm:grid-cols-2 xl:grid-cols-3' : 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'} ${isScrollReady ? 'opacity-100' : 'opacity-0'}`}
                 >
                   {productGroups.map((group, index) => (
                     <ShopProductCard 
