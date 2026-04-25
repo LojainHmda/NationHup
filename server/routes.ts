@@ -158,6 +158,46 @@ async function getInactivePreorderCollections(): Promise<Set<string>> {
   return new Set(settings.map(s => s.collectionName));
 }
 
+const EXCLUDED_BRAND_TAG_PREFIX = "excluded_brand:";
+
+function extractExcludedBrandIdsFromSegmentsTags(tags: unknown): string[] {
+  if (!Array.isArray(tags)) return [];
+  return tags
+    .filter((tag): tag is string => typeof tag === "string" && tag.startsWith(EXCLUDED_BRAND_TAG_PREFIX))
+    .map((tag) => tag.slice(EXCLUDED_BRAND_TAG_PREFIX.length).trim())
+    .filter((id) => id.length > 0);
+}
+
+async function getCurrentUserBrandExclusions(req: any): Promise<{
+  excludedBrandIds: Set<string>;
+  excludedBrandNames: Set<string>;
+}> {
+  if (!req.session?.userId) {
+    return { excludedBrandIds: new Set(), excludedBrandNames: new Set() };
+  }
+
+  const user = await storage.getUser(req.session.userId);
+  if (!user || user.role !== "customer") {
+    return { excludedBrandIds: new Set(), excludedBrandNames: new Set() };
+  }
+
+  const customerProfile = await storage.getCustomerProfile(user.id);
+  const excludedIds = extractExcludedBrandIdsFromSegmentsTags((customerProfile as any)?.segmentsTags);
+  if (excludedIds.length === 0) {
+    return { excludedBrandIds: new Set(), excludedBrandNames: new Set() };
+  }
+
+  const excludedBrandRows = await db
+    .select({ id: brands.id, name: brands.name })
+    .from(brands)
+    .where(inArray(brands.id, excludedIds));
+
+  return {
+    excludedBrandIds: new Set(excludedIds),
+    excludedBrandNames: new Set(excludedBrandRows.map((row) => row.name)),
+  };
+}
+
 // Auto-seed default staff users (Sales, Finance) on server startup
 export async function seedDefaultStaffUsers(): Promise<void> {
   try {
@@ -1255,6 +1295,7 @@ Always be professional and concise in your responses.`
         blacklistReason: z.string().nullable().optional(),
         notes: z.string().nullable().optional(),
         allowPreOrders: z.boolean().optional(),
+        segmentsTags: z.array(z.string()).nullable().optional(),
         defaultCurrency: z.string().optional(),
         accountManagerId: z.string().nullable().optional(),
         billingAddress: z.object({
@@ -1903,11 +1944,17 @@ Always be professional and concise in your responses.`
   app.get("/api/products/brand-counts", async (req, res) => {
     try {
       const { isPreOrder } = req.query;
+      const { excludedBrandNames } = await getCurrentUserBrandExclusions(req);
       const inactiveCollections = await getInactivePreorderCollections();
       const counts = await storage.getProductCountsByBrand({
         isPreOrder: isPreOrder === 'true' ? true : isPreOrder === 'false' ? false : undefined,
         excludeCollections: Array.from(inactiveCollections),
       });
+      if (excludedBrandNames.size > 0) {
+        for (const brandName of excludedBrandNames) {
+          delete counts[brandName];
+        }
+      }
       res.json(counts);
     } catch (error) {
       console.error("Error getting brand counts:", error);
@@ -2092,8 +2139,9 @@ Always be professional and concise in your responses.`
       } = req.query;
       
       const inactiveCollections = await getInactivePreorderCollections();
+      const { excludedBrandNames } = await getCurrentUserBrandExclusions(req);
       
-      const count = await storage.getFilteredProductCount({
+      let count = await storage.getFilteredProductCount({
         category: category as string,
         brand: brand as string,
         collections: collectionsFilter ? (collectionsFilter as string).split(',') : undefined,
@@ -2114,6 +2162,31 @@ Always be professional and concise in your responses.`
         divisions: divisions ? (divisions as string).split(',') : undefined,
         excludeCollections: Array.from(inactiveCollections),
       });
+
+      if (excludedBrandNames.size > 0) {
+        const productsForCount = await storage.getProducts({
+          category: category as string,
+          brand: brand as string,
+          collections: collectionsFilter ? (collectionsFilter as string).split(',') : undefined,
+          minPrice: minPrice ? parseFloat(minPrice as string) : undefined,
+          maxPrice: maxPrice ? parseFloat(maxPrice as string) : undefined,
+          sizes: sizes ? (sizes as string).split(',') : undefined,
+          search: search as string,
+          styles: styles ? (styles as string).split(',') : undefined,
+          ageRanges: ageRanges ? (ageRanges as string).split(',') : undefined,
+          occasions: occasions ? (occasions as string).split(',') : undefined,
+          genders: genders ? (genders as string).split(',') : undefined,
+          colors: colors ? (colors as string).split(',') : undefined,
+          supplierLocations: supplierLocations ? (supplierLocations as string).split(',') : undefined,
+          isPreOrder: isPreOrder === 'true' ? true : isPreOrder === 'false' ? false : undefined,
+          mainCategories: mainCategories ? (mainCategories as string).split(',') : undefined,
+          kidsGenders: kidsGenders ? (kidsGenders as string).split(',') : undefined,
+          kidsAgeGroups: kidsAgeGroups ? (kidsAgeGroups as string).split(',') : undefined,
+          divisions: divisions ? (divisions as string).split(',') : undefined,
+          excludeCollections: Array.from(inactiveCollections),
+        });
+        count = productsForCount.filter((product) => !excludedBrandNames.has(product.brand)).length;
+      }
       
       res.json({ count });
     } catch (error) {
@@ -2133,6 +2206,7 @@ Always be professional and concise in your responses.`
       
       // Get inactive collections FIRST so we can apply SQL-level filtering
       const inactiveCollections = await getInactivePreorderCollections();
+      const { excludedBrandNames } = await getCurrentUserBrandExclusions(req);
       
       console.log("🔍 Products API called with filters:", { category, brand, collections: collectionsFilter, genders, sizes, search, models, isPreOrder, mainCategories, kidsGenders, kidsAgeGroups, divisions, limit, offset, inactiveCollectionsCount: inactiveCollections.size });
       
@@ -2161,6 +2235,10 @@ Always be professional and concise in your responses.`
         offset: offset ? parseInt(offset as string, 10) : undefined,
         excludeCollections: Array.from(inactiveCollections),
       });
+
+      if (excludedBrandNames.size > 0) {
+        filteredProducts = filteredProducts.filter((product) => !excludedBrandNames.has(product.brand));
+      }
       
       console.log(`🔍 Found ${filteredProducts.length} products after filtering`);
       res.json(filteredProducts);
@@ -4810,8 +4888,12 @@ Be helpful, concise, and professional.`
   // Brand management routes
   app.get("/api/brands", async (req, res) => {
     try {
+      const { excludedBrandIds } = await getCurrentUserBrandExclusions(req);
       const brandResults = await db.select().from(brands);
-      res.json(brandResults.map((b) => withResolvedBrandLogo(b, req)));
+      const visibleBrands = excludedBrandIds.size > 0
+        ? brandResults.filter((brand) => !excludedBrandIds.has(brand.id))
+        : brandResults;
+      res.json(visibleBrands.map((b) => withResolvedBrandLogo(b, req)));
     } catch (error) {
       console.error("Error fetching brands:", error);
       res.status(500).json({ message: "Failed to fetch brands" });

@@ -24,7 +24,7 @@ export function ShopProductCard({
   disabled = false,
 }: ShopProductCardProps) {
   const { variants } = productGroup;
-  const { formatPrice } = useCurrency();
+  const { convertPrice, getCurrencySymbol, userCurrency } = useCurrency();
   
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -146,6 +146,13 @@ export function ShopProductCard({
   const isVariantInCart = (variant: Product, color: string) => {
     const sku = variant.sku || '';
     return cartProductKeys.has(`${sku}-${color}`);
+  };
+
+  // Shop card requirement: show integer prices only (no decimals)
+  const formatIntegerPrice = (price: number, fromCurrency: string = "USD") => {
+    const convertedPrice = convertPrice(price, fromCurrency);
+    const rounded = Math.round(convertedPrice);
+    return `${getCurrencySymbol(userCurrency)}${rounded.toLocaleString("en-US")}`;
   };
 
   return (
@@ -312,10 +319,10 @@ export function ShopProductCard({
         </p>
         <div className="absolute bottom-2 sm:bottom-3 right-2 sm:right-4 text-right space-y-0">
           <p className="text-[10px] sm:text-xs text-gray-400 font-medium leading-none">
-            Wholesale Price: <span className="text-black text-sm sm:text-base font-bold">{formatPrice(Number(selectedVariant.wholesalePrice), selectedVariant.baseCurrency || "USD")}</span>
+            Wholesale Price: <span className="text-black text-sm sm:text-base font-bold">{formatIntegerPrice(Number(selectedVariant.wholesalePrice), selectedVariant.baseCurrency || "USD")}</span>
           </p>
           <p className="text-[10px] sm:text-xs text-gray-400 font-medium leading-none">
-            Retail Price: <span className="text-black text-sm sm:text-base font-bold">{formatPrice(Number(selectedVariant.retailPrice), selectedVariant.baseCurrency || "USD")}</span>
+            Retail Price: <span className="text-black text-sm sm:text-base font-bold">{formatIntegerPrice(Number(selectedVariant.retailPrice), selectedVariant.baseCurrency || "USD")}</span>
           </p>
         </div>
       </div>

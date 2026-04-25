@@ -44,6 +44,8 @@ interface CustomerCredentials {
   businessName: string;
 }
 
+const EXCLUDED_BRAND_TAG_PREFIX = "excluded_brand:";
+
 const getInitialFormData = () => ({
   businessName: "",
   ownerName: "",
@@ -57,6 +59,7 @@ const getInitialFormData = () => ({
   currency: "USD",
   creditLimit: "",
   allowPreOrders: true,
+  excludedBrandIds: [] as string[],
   taxVatNumber: "",
   taxRate: "",
   registrationCountry: "",
@@ -89,6 +92,7 @@ export default function CustomerProfilePage() {
   const [tradeLicensePreview, setTradeLicensePreview] = useState("");
   const [idPhotoPreview, setIdPhotoPreview] = useState("");
   const [storePhotosPreview, setStorePhotosPreview] = useState<string[]>([]);
+  const [brandToExclude, setBrandToExclude] = useState<string>("");
 
   const { data: accountManagers = [] } = useQuery<Array<{ id: string; name: string; email: string }>>({
     queryKey: ["/api/account-managers"],
@@ -96,6 +100,10 @@ export default function CustomerProfilePage() {
 
   const { data: currencies = [] } = useQuery<Array<{ code: string; name: string; symbol: string }>>({
     queryKey: ["/api/currencies"],
+  });
+
+  const { data: brands = [] } = useQuery<Array<{ id: string; name: string; isActive: boolean }>>({
+    queryKey: ["/api/brands"],
   });
 
   const clearError = (field: string) => {
@@ -159,6 +167,7 @@ export default function CustomerProfilePage() {
           currency: data.currency,
           creditLimit: data.creditLimit ? parseFloat(data.creditLimit) : 0,
           allowPreOrders: data.allowPreOrders,
+          segmentsTags: data.excludedBrandIds.map((brandId) => `${EXCLUDED_BRAND_TAG_PREFIX}${brandId}`),
           taxVatNumber: data.taxVatNumber,
           taxRate: data.taxRate ? parseFloat(data.taxRate) : 0,
           registrationCountry: data.registrationCountry,
@@ -285,6 +294,28 @@ export default function CustomerProfilePage() {
     const updated = formData.phoneNumbers.filter((_, i) => i !== index);
     setFormData({ ...formData, phoneNumbers: updated });
   };
+
+  const toggleExcludedBrand = (brandId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      excludedBrandIds: prev.excludedBrandIds.includes(brandId)
+        ? prev.excludedBrandIds.filter((id) => id !== brandId)
+        : [...prev.excludedBrandIds, brandId],
+    }));
+  };
+
+  const addExcludedBrand = (brandId: string) => {
+    if (!brandId) return;
+    setFormData((prev) => {
+      if (prev.excludedBrandIds.includes(brandId)) return prev;
+      return { ...prev, excludedBrandIds: [...prev.excludedBrandIds, brandId] };
+    });
+    setBrandToExclude("");
+  };
+
+  const activeBrands = brands.filter((brand) => brand.isActive);
+  const selectedExcludedBrands = activeBrands.filter((brand) => formData.excludedBrandIds.includes(brand.id));
+  const availableBrandOptions = activeBrands.filter((brand) => !formData.excludedBrandIds.includes(brand.id));
 
   const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -591,6 +622,42 @@ export default function CustomerProfilePage() {
                     data-testid="checkbox-allow-preorders"
                   />
                   <Label htmlFor="allowPreOrders" className="text-xs cursor-pointer">Allow Pre-Orders</Label>
+                </div>
+                <div className="col-span-1 md:col-span-3">
+                  <Label className="text-xs">Hidden Brands In Shop</Label>
+                  <div className="mt-1 space-y-2">
+                    <Select value={brandToExclude} onValueChange={addExcludedBrand}>
+                      <SelectTrigger className="h-9 text-sm" data-testid="select-hidden-brand">
+                        <SelectValue placeholder="Select brand to hide..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableBrandOptions.length > 0 ? (
+                          availableBrandOptions.map((brand) => (
+                            <SelectItem key={brand.id} value={brand.id}>
+                              {brand.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="none" disabled>All brands already selected</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedExcludedBrands.map((brand) => (
+                        <button
+                          key={brand.id}
+                          type="button"
+                          onClick={() => toggleExcludedBrand(brand.id)}
+                          className="px-2 py-1 rounded-md border text-[11px] transition-colors bg-red-50 border-red-300 text-red-700"
+                          data-testid={`chip-hide-brand-${brand.id}`}
+                          title="Click to remove"
+                        >
+                          {brand.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
               

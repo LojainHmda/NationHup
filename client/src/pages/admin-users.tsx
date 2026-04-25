@@ -123,6 +123,8 @@ interface CustomerUser {
 type SortField = 'username' | 'displayName' | 'email' | 'status' | 'createdAt' | 'companyName' | 'phone';
 type SortDirection = 'asc' | 'desc';
 
+const EXCLUDED_BRAND_TAG_PREFIX = "excluded_brand:";
+
 /** Read persisted customer document URLs from API profile (camelCase, snake_case, or JSON string arrays). */
 function getProfileDocumentFields(profile: Record<string, unknown> | null | undefined): {
   tradeLicensePhotoUrl: string;
@@ -201,6 +203,7 @@ export default function AdminUsersPage() {
   const storePhotosInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedUser, setSelectedUser] = useState<CustomerUser | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [brandToExclude, setBrandToExclude] = useState<string>('');
   
   const [formData, setFormData] = useState({
     username: '',
@@ -237,6 +240,8 @@ export default function AdminUsersPage() {
     }>,
     creditLimit: '0',
     allowPreOrders: true,
+    baseSegmentsTags: [] as string[],
+    excludedBrandIds: [] as string[],
     notes: '',
     tradeLicensePhotoUrl: '',
     idPhotoUrl: '',
@@ -255,6 +260,10 @@ export default function AdminUsersPage() {
 
   const { data: currencies = [] } = useQuery<Array<{ code: string; name: string; symbol: string; isDefault: boolean }>>({
     queryKey: ['/api/currencies'],
+  });
+
+  const { data: brands = [] } = useQuery<Array<{ id: string; name: string; isActive: boolean }>>({
+    queryKey: ['/api/brands'],
   });
 
   const updateUserMutation = useMutation({
@@ -416,6 +425,15 @@ export default function AdminUsersPage() {
     setSelectedUser(user);
     const profile = user.profile as Record<string, unknown> | null | undefined;
     const docs = getProfileDocumentFields(profile ?? null);
+    const rawSegmentsTags = Array.isArray((profile?.segmentsTags as unknown[]))
+      ? (profile?.segmentsTags as unknown[]).filter((tag): tag is string => typeof tag === 'string')
+      : [];
+    const excludedBrandIds = rawSegmentsTags
+      .filter((tag) => tag.startsWith(EXCLUDED_BRAND_TAG_PREFIX))
+      .map((tag) => tag.slice(EXCLUDED_BRAND_TAG_PREFIX.length).trim())
+      .filter((id) => id.length > 0);
+    const baseSegmentsTags = rawSegmentsTags.filter((tag) => !tag.startsWith(EXCLUDED_BRAND_TAG_PREFIX));
+
     setFormData({
       username: user.username || '',
       displayName: user.displayName || '',
@@ -441,12 +459,15 @@ export default function AdminUsersPage() {
       },
       creditLimit: (profile?.creditLimit as string) || '0',
       allowPreOrders: (profile?.allowPreOrders as boolean) ?? true,
+      baseSegmentsTags,
+      excludedBrandIds,
       shippingAddresses: (profile?.shippingAddresses as typeof formData.shippingAddresses) || [],
       notes: (profile?.notes as string) || '',
       tradeLicensePhotoUrl: docs.tradeLicensePhotoUrl,
       idPhotoUrl: docs.idPhotoUrl,
       storePhotoUrls: docs.storePhotoUrls,
     });
+    setBrandToExclude('');
     setEditDialogOpen(true);
   };
 
@@ -482,6 +503,10 @@ export default function AdminUsersPage() {
       billingAddress: formData.billingAddress,
       creditLimit: formData.creditLimit || undefined,
       allowPreOrders: formData.allowPreOrders,
+      segmentsTags: [
+        ...formData.baseSegmentsTags,
+        ...formData.excludedBrandIds.map((brandId) => `${EXCLUDED_BRAND_TAG_PREFIX}${brandId}`),
+      ],
       shippingAddresses: formData.shippingAddresses,
       notes: formData.notes || undefined,
       tradeLicensePhotoUrl: formData.tradeLicensePhotoUrl || undefined,
@@ -623,6 +648,28 @@ export default function AdminUsersPage() {
       phoneNumbers: newPhoneNumbers,
     });
   };
+
+  const toggleExcludedBrand = (brandId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      excludedBrandIds: prev.excludedBrandIds.includes(brandId)
+        ? prev.excludedBrandIds.filter((id) => id !== brandId)
+        : [...prev.excludedBrandIds, brandId],
+    }));
+  };
+
+  const addExcludedBrand = (brandId: string) => {
+    if (!brandId) return;
+    setFormData((prev) => {
+      if (prev.excludedBrandIds.includes(brandId)) return prev;
+      return { ...prev, excludedBrandIds: [...prev.excludedBrandIds, brandId] };
+    });
+    setBrandToExclude('');
+  };
+
+  const activeBrands = brands.filter((brand) => brand.isActive);
+  const selectedExcludedBrands = activeBrands.filter((brand) => formData.excludedBrandIds.includes(brand.id));
+  const availableBrandOptions = activeBrands.filter((brand) => !formData.excludedBrandIds.includes(brand.id));
 
   const handleResetPassword = () => {
     if (!selectedUser || !newPassword) return;
@@ -1184,6 +1231,42 @@ export default function AdminUsersPage() {
                   data-testid="checkbox-edit-allow-preorders"
                 />
                 <Label htmlFor="allowPreOrders" className="text-[11px] cursor-pointer">Allow Pre-Orders</Label>
+              </div>
+              <div className="col-span-1 md:col-span-3">
+                <Label className="text-[11px]">Hidden Brands In Shop</Label>
+                <div className="mt-1 space-y-1.5">
+                  <Select value={brandToExclude} onValueChange={addExcludedBrand}>
+                    <SelectTrigger className="h-7 text-xs" data-testid="select-edit-hidden-brand">
+                      <SelectValue placeholder="Select brand to hide..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableBrandOptions.length > 0 ? (
+                        availableBrandOptions.map((brand) => (
+                          <SelectItem key={brand.id} value={brand.id}>
+                            {brand.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="none" disabled>All brands selected</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+
+                  <div className="flex flex-wrap gap-1">
+                    {selectedExcludedBrands.map((brand) => (
+                      <button
+                        key={brand.id}
+                        type="button"
+                        onClick={() => toggleExcludedBrand(brand.id)}
+                        className="px-1.5 py-0.5 rounded border text-[10px] bg-red-50 border-red-300 text-red-700"
+                        data-testid={`chip-edit-hide-brand-${brand.id}`}
+                        title="Click to remove"
+                      >
+                        {brand.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 

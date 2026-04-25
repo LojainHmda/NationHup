@@ -4,6 +4,66 @@ Chronological record of code changes. Updated after every substantive code chang
 
 ---
 
+### [SEQ-057] 2026-04-25 09:51
+
+**Files:** `client/src/components/shop/ShopProductCard.tsx`, `DEVLOG.md`
+
+**Action:** Render shop card prices as integers
+
+**Details:** Added local integer-only price formatting in `ShopProductCard` by converting currency with existing context helpers, rounding to whole numbers, and rendering with currency symbol + grouped digits. Applied to both wholesale and retail lines on shop product cards without changing global currency formatter behavior elsewhere.
+
+**Reason:** User requested prices in shop product cards to display as integers.
+
+---
+
+### [SEQ-056] 2026-04-25 09:30
+
+**Files:** `client/src/pages/product-detail.tsx`, `DEVLOG.md`
+
+**Action:** Fix product page image fit distortion
+
+**Details:** Replaced `object-fill` with `object-contain` for the main image (admin and non-admin views) and gallery thumbnails on the product detail page, and added a neutral background (`bg-gray-50`) so non-matching aspect ratios display cleanly without stretching.
+
+**Reason:** User reported product page images looked distorted and requested a fix only on product page (not shop cards).
+
+---
+
+### [SEQ-055] 2026-04-25 09:12
+
+**Files:** `client/src/pages/customer-profile.tsx`, `client/src/pages/admin-users.tsx`, `DEVLOG.md`
+
+**Action:** Switch hidden-brand picker to dropdown + chips
+
+**Details:** Replaced the multi-button hidden-brand selector with a dropdown that adds one brand at a time, then renders selected brands as removable chips using the same red chip design. Applied this in both Create Customer and Edit User forms so selection UX matches request while preserving existing save behavior to `segmentsTags`.
+
+**Reason:** User requested a dropdown-based selection flow where chosen brands appear beside the control as chips.
+
+---
+
+### [SEQ-054] 2026-04-25 08:57
+
+**Files:** `server/routes.ts`, `client/src/pages/customer-profile.tsx`, `client/src/pages/admin-users.tsx`, `DEVLOG.md`
+
+**Action:** Add per-customer hidden-brand controls and shop enforcement
+
+**Details:** Added hidden-brand selection controls next to `Allow Pre-Orders` in both Create Customer and Edit Customer flows, persisted selections via `segmentsTags` using an `excluded_brand:` tag convention, and enforced exclusions in `/api/brands`, `/api/products/brand-counts`, `/api/products/count`, and `/api/products` so excluded brands do not appear in the shop brand bar or product listings for that customer.
+
+**Reason:** User requested brand-level visibility restrictions per customer, including management from both create and edit user screens.
+
+---
+
+### [SEQ-053] 2026-04-25 08:46
+
+**Files:** `client/src/pages/product-detail.tsx`, `DEVLOG.md`
+
+**Action:** Restore wholesale row above retail in product details
+
+**Details:** Re-added the `Wholesale Price` field to the `productFields` array in `ProductDetailPage`, keeping it directly above `Retail Price` so both rows render with the existing shared row layout, spacing, typography, and value formatting.
+
+**Reason:** User requested that wholesale price be shown above the retail price row with the same visual design.
+
+---
+
 ### [SEQ-052] 2026-04-23 18:55
 
 **Files:** `client/src/pages/stock-brands.tsx`, `DEVLOG.md`

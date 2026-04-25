@@ -891,8 +891,7 @@ export default function ProductDetailPage() {
     { label: "Product Line", value: displayProduct.productLine },
     { label: "Sports Category", value: displayProduct.sportsCategory },
     { label: "Material Composition", value: displayProduct.materialComposition },
-    // Wholesale Price hidden from product page
-    // { label: "Wholesale Price", value: displayProduct.wholesalePrice ? formatPrice(Number(displayProduct.wholesalePrice), displayProduct.baseCurrency || "USD") : null },
+    { label: "Wholesale Price", value: displayProduct.wholesalePrice ? formatPrice(Number(displayProduct.wholesalePrice), displayProduct.baseCurrency || "USD") : null },
     { label: "Retail Price", value: displayProduct.retailPrice ? formatPrice(Number(displayProduct.retailPrice), displayProduct.baseCurrency || "USD") : null },
     { label: "MOQ", value: displayProduct.moq },
     { label: "Limit Order", value: displayProduct.limitOrder ? displayProduct.limitOrder.toString() : null },
@@ -950,7 +949,7 @@ export default function ProductDetailPage() {
                     <img
                       src={currentImage}
                       alt={displayProduct.name}
-                      className="w-full h-full object-fill"
+                      className="w-full h-full object-contain bg-gray-50"
                       data-testid="img-product-detail"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = defaultProductImage;
@@ -1076,7 +1075,7 @@ export default function ProductDetailPage() {
                 <img
                   src={currentImage}
                   alt={displayProduct.name}
-                  className="w-full h-full object-fill"
+                  className="w-full h-full object-contain bg-gray-50"
                   data-testid="img-product-detail"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = defaultProductImage;
@@ -1122,7 +1121,7 @@ export default function ProductDetailPage() {
                     <img
                       src={img || defaultProductImage}
                       alt={`${product.name} view ${idx + 1}`}
-                      className="w-full h-full object-fill"
+                      className="w-full h-full object-contain bg-gray-50"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = defaultProductImage;
                       }}
